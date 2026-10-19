@@ -1,5 +1,6 @@
 import pathlib,zipfile,hashlib,json,shutil
 root=pathlib.Path(__file__).resolve().parents[1];out=root/'delivery';out.mkdir(exist_ok=True)
+version=json.loads((root/'package.json').read_text(encoding='utf-8'))['version']
 def archive(target,files):
     with zipfile.ZipFile(target,'w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
         for p,name in files:z.write(p,name)
@@ -10,9 +11,9 @@ for folder in ['desktop','tools','tests','docs','reports','vendor-source']:
 files.append((root/'desktop/akuma-art.png','desktop/akuma-art.png'))
 for name in ['package.json','pnpm-lock.yaml','electron-builder.akuma.yml','LICENSE.txt','README.md']:
     files.append((root/name,name))
-archive(out/'AKUMA-Launcher-Sources-0.1.0.zip',files)
-archive(out/'AKUMA-Modpack-Candidat-PRIVE.zip',[(p,p.relative_to(root/'private-pack').as_posix()) for p in (root/'private-pack').rglob('*') if p.is_file()])
-installer=root/'dist-akuma/AKUMA-Launcher-Preview-0.1.0-Windows.exe';shutil.copy2(installer,out/installer.name)
+archive(out/f'AKUMA-Launcher-Sources-{version}.zip',files)
+if not (out/'AKUMA-Modpack-Candidat-PRIVE.zip').exists():archive(out/'AKUMA-Modpack-Candidat-PRIVE.zip',[(p,p.relative_to(root/'private-pack').as_posix()) for p in (root/'private-pack').rglob('*') if p.is_file()])
+installer=root/f'dist-akuma/AKUMA-Launcher-Preview-{version}-Windows.exe';shutil.copy2(installer,out/installer.name)
 hashes={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in out.iterdir() if p.is_file() and p.suffix.lower() in {'.exe','.zip'}}
 (out/'SHA256SUMS.txt').write_text('\n'.join(f'{h}  {n}' for n,h in hashes.items())+'\n',encoding='utf-8')
 print(json.dumps({p.name:p.stat().st_size for p in out.iterdir() if p.is_file()},indent=2))

@@ -6,6 +6,10 @@ directories:
   output: dist-akuma
 files:
   - desktop/**
+  - '!desktop/auth.cjs'
+  - '!desktop/game.cjs'
+  - '!desktop/processbuilder.cjs'
+  - '!desktop/runtime-config.cjs'
   - LICENSE.txt
   - package.json
 win:

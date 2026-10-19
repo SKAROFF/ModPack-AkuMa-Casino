@@ -1,5 +1,5 @@
 {
-  "microsoftClientId": "",
+  "authProvider": "prism-official",
   "feedUrl": "https://github.com/SKAROFF/ModPack-AkuMa-Casino/releases/latest/download/latest.json",
   "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAouexaXkhN2b+7G8qY+SxFpyPW/ukQggDF+A8Ssdm6WM=\n-----END PUBLIC KEY-----\n",
   "serverAddress": "akuma-casino.mine.fun",

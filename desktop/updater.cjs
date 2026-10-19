@@ -1,6 +1,9 @@
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const tls = require('node:tls');
+// Trust the operating system's installed roots while retaining normal HTTPS validation.
+if(tls.setDefaultCACertificates && tls.getCACertificates)tls.setDefaultCACertificates([...tls.getCACertificates('default'),...tls.getCACertificates('system')]);
 const {createWriteStream} = require('node:fs');
 const {Readable} = require('node:stream');
 const {pipeline} = require('node:stream/promises');

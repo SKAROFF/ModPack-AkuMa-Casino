@@ -1,20 +1,15 @@
-# AkuMa Launcher
+# AkuMa Launcher avec Prism officiel
 
-Préversion Windows x64 0.1.0. Serveur : akuma-casino.mine.fun. Discord : https://discord.gg/TNMHftawHw.
+Préversion Windows x64 0.2.0. Interface Royal AkuMa, synchronisation signée du modpack et connexion Microsoft déléguée au programme Prism officiel non modifié. Aucun compte Azure ou identifiant développeur Microsoft requis.
 
-Le moteur installe Java 21, Minecraft 1.21.1 et Fabric, et synchronise les fichiers par manifeste signé Ed25519 avec contrôle SHA-256. Interface Electron isolée, authentification Microsoft externe PKCE et stockage chiffré de session.
+Serveur : akuma-casino.mine.fun. Discord : https://discord.gg/TNMHftawHw.
 
-La mise en service publique nécessite encore une application Microsoft approuvée, un hébergement HTTPS et la validation des fichiers privés. La connexion et le lancement authentifiés ne sont pas déclarés testés.
+Commencer par docs/AKUMA-PRISM.md. Publication : docs/AKUMA-GITHUB.md et docs/AKUMA-ADMIN.md. Résultats : docs/AKUMA-TESTS-SECURITE.md.
 
-- Installation : docs/AKUMA-INSTALLATION.md
-- Publication, Microsoft et hébergement : docs/AKUMA-ADMIN.md
-- Hébergement choisi sur GitHub Releases : docs/AKUMA-GITHUB.md
-- Résultats et limites : docs/AKUMA-TESTS-SECURITE.md
-- Droits des fichiers : reports/publication-candidate.json
-- Comparaison du pack fourni : reports/user-archive-audit.json
+Le dépôt public doit encore recevoir sa première release signée. Les sources autorisées des mods et les droits en attente sont dans reports/publication-candidate.json. Le démarrage authentifié dans le nouveau profil Prism reste à tester avec le joueur.
 
 Développement : pnpm install --frozen-lockfile, puis pnpm start. Tests : pnpm test. Installateur : pnpm run dist.
 
-La clé privée locale est exclue des archives de livraison. Ne distribuez jamais private-admin, qa ou private-pack-initial-audit. Le candidat PRIVE est destiné à votre revue locale ; sa présence ne vaut pas autorisation de diffusion publique de tous les fichiers.
+Ne distribuez jamais private-admin, qa, les fichiers de comptes Prism ou les anciens caches. Les archives de livraison excluent les clés privées et les sessions. Les fichiers HISTORIQUE-0.1 décrivent le moteur précédent et ne constituent pas la procédure de la version actuelle.
 
-Helios Launcher : MIT, Daniel Scalzi. helios-core : LGPL-3.0-only, sources fournies dans vendor-source/helios-core. Voir LICENSE.txt et reports/dependency-licenses.json.
+Interface basée sur Helios Launcher sous MIT, Daniel Scalzi. La bibliothèque helios-core utilisée pour le statut du serveur reste sous LGPL-3.0-only ; sources correspondantes fournies dans vendor-source/helios-core. Prism officiel est téléchargé depuis sa distribution originale sous GPL-3 et reste séparé de notre programme. Aucun identifiant Microsoft Prism n’est intégré au code AkuMa.

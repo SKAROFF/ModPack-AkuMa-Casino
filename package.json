@@ -1,11 +1,11 @@
 {
   "name": "akuma-launcher",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "productName": "AKUMA Launcher",
-  "description": "Launcher officiel AkuMa — Minecraft Java Fabric 1.21.1",
+  "description": "Interface AkuMa et connexion Microsoft via Prism officiel",
   "author": "Daniel Scalzi (https://github.com/dscalzi/)",
   "license": "MIT",
-  "homepage": "https://github.com/dscalzi/HeliosLauncher",
+  "homepage": "https://github.com/SKAROFF/ModPack-AkuMa-Casino",
   "bugs": {
     "url": "https://github.com/dscalzi/HeliosLauncher/issues"
   },
@@ -30,7 +30,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dscalzi/HeliosLauncher.git"
+    "url": "git+https://github.com/SKAROFF/ModPack-AkuMa-Casino.git"
   },
   "packageManager": "pnpm@11.25.0"
 }
