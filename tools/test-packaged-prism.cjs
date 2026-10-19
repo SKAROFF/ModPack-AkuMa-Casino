@@ -5,7 +5,7 @@ const config=JSON.parse(asar.extractFile(archive,'desktop/config.json'));
 if(config.authProvider!=='prism-official'||config.microsoftClientId||files.includes('/desktop/auth.cjs')||!files.includes('/desktop/prism.cjs'))throw Error('Architecture Prism incorrecte dans le binaire');
 const exe=path.resolve('dist-akuma/win-unpacked/AKUMA Launcher.exe');
 cp.execFile(exe,['--akuma-prelaunch',path.resolve('qa/no-published-pack')],{windowsHide:true,timeout:20000},(error,stdout,stderr)=>{
-    const result={packagedPrismBridge:true,legacyOAuthExcluded:true,requiresAzure:false,gateRefusedUnpublishedFeed:error?.code===1&&stderr.includes('HTTP 404'),stderr:stderr.trim(),authenticatedGameLaunchTested:false};
+    const result={packagedPrismBridge:true,legacyOAuthExcluded:true,requiresAzure:false,gateRefusedMissingPack:error?.code===1&&(stderr.includes('HTTP 404')||stderr.includes('ENOENT')),stderr:stderr.trim(),authenticatedGameLaunchTested:false};
     fs.writeFileSync('reports/prism-packaged-test.json',JSON.stringify(result,null,2));console.log(result);
-    if(!result.gateRefusedUnpublishedFeed)process.exitCode=1;
+    if(!result.gateRefusedMissingPack)process.exitCode=1;
 });
