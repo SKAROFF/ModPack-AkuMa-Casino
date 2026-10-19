@@ -20,7 +20,14 @@ async function openPrismAccount(){
 }
 async function operation(name,args){
     if(name==='state')return state();
-    if(name==='login'||name==='logout')return exclusive(openPrismAccount);
+    if(name==='login'||name==='logout'){
+        const active=await prism.activeSession(gameRoot());
+        if(active?.mode==='account'){
+            await prism.reopen(gameRoot(),await prism.ensureEngine(gameRoot(),progress));
+            return 'Prism est déjà ouvert. Sa fenêtre a été rappelée ; terminez la connexion dans Prism.';
+        }
+        return exclusive(openPrismAccount);
+    }
     if(name==='settings')return exclusive(async()=>{
         const s=args;
         if(!Number.isInteger(s.ram)||s.ram<1024||s.ram>maxRam()||!Number.isInteger(s.width)||s.width<640||s.width>7680||!Number.isInteger(s.height)||s.height<480||s.height>4320||typeof s.fullscreen!=='boolean')throw Error('Paramètres incompatibles avec cette machine.');
@@ -34,7 +41,7 @@ async function operation(name,args){
         const {getServerStatus}=require('helios-core/mojang'); const [host,p]=config.serverAddress.split(':');
         try{const s=await getServerStatus(767,host,Number(p)||25565);return {online:true,message:`${s.players.online} / ${s.players.max} joueurs`};}catch{return {online:false,message:'Serveur indisponible'};}
     }
-    if(name==='check')return exclusive(async()=>{const m=await updater.feed(config),installed=await read(path.join(gameDirectory(),'.akuma/state.json'),{});return {remote:m.version,installed:installed.version||null,available:m.version!==installed.version};});
+    if(name==='check'){const m=await updater.feed(config),installed=await read(path.join(gameDirectory(),'.akuma/state.json'),{});return {remote:m.version,installed:installed.version||null,available:m.version!==installed.version};}
     if(name==='rollback')return exclusive(async()=>{await updater.rollback(gameDirectory());return 'Version précédente restaurée. La prochaine synchronisation suivra la version publiée.';});
     if(name==='launcherUpdate')return exclusive(async()=>{
         if(!config.launcherFeedUrl||!config.publicKey)throw Error('Mises à jour du launcher à configurer par l’administrateur.');
@@ -54,7 +61,7 @@ async function operation(name,args){
         await prism.configure(gameRoot(),settings,m,gateCommand());
         if(name==='repair'){progress({text:`Version ${result.version} vérifiée`,percent:100});return result;}
         game=await prism.start(gameRoot(),engine,config.serverAddress,true,()=>{game=null;progress({text:'Session Prism terminée',percent:0});if(BrowserWindow.getAllWindows().length===0)app.quit();});
-        progress({text:'Prism prépare Minecraft et vérifie votre compte Microsoft',percent:100});return result;
+        progress({text:'Démarrage de Minecraft — vérification du compte Microsoft',percent:100});return result;
     });
     throw Error('Action inconnue');
 }

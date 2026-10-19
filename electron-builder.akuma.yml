@@ -2,6 +2,9 @@ appId: fr.akuma.launcher
 productName: AKUMA Launcher
 artifactName: 'AKUMA-Launcher-Preview-${version}-Windows.${ext}'
 asar: true
+extraResources:
+  - from: bundled-engine/Prism-11.1.1.zip
+    to: Prism-11.1.1.zip
 directories:
   output: dist-akuma
 files:
