@@ -1,0 +1,20 @@
+appId: fr.akuma.launcher
+productName: AKUMA Launcher
+artifactName: 'AKUMA-Launcher-Preview-${version}-Windows.${ext}'
+asar: true
+directories:
+  output: dist-akuma
+files:
+  - desktop/**
+  - LICENSE.txt
+  - package.json
+win:
+  target:
+    - target: nsis
+      arch: x64
+  signAndEditExecutable: false
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false

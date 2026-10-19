@@ -1,0 +1,16 @@
+{
+  "microsoftClientId": "",
+  "feedUrl": "https://github.com/SKAROFF/ModPack-AkuMa-Casino/releases/latest/download/latest.json",
+  "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAouexaXkhN2b+7G8qY+SxFpyPW/ukQggDF+A8Ssdm6WM=\n-----END PUBLIC KEY-----\n",
+  "serverAddress": "akuma-casino.mine.fun",
+  "launcherFeedUrl": "https://github.com/SKAROFF/ModPack-AkuMa-Casino/releases/latest/download/launcher-latest.json",
+  "discordUrl": "https://discord.gg/TNMHftawHw",
+  "allowedHosts": [
+    "cdn.modrinth.com",
+    "edge.forgecdn.net",
+    "mediafilez.forgecdn.net",
+    "github.com",
+    "release-assets.githubusercontent.com"
+  ],
+  "news": "Bienvenue au Royaume AkuMa. Rejoignez notre Discord pour les nouveautés et les prochaines ouvertures du launcher."
+}

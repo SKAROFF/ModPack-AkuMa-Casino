@@ -1,0 +1,15 @@
+let settings,root,java;
+exports.configure=(s,r,j)=>{settings=s;root=r;java=j;};
+exports.getInstanceDirectory=()=>require('node:path').join(root,'instances');
+exports.getCommonDirectory=()=>require('node:path').join(root,'common');
+exports.getJavaExecutable=()=>java;
+exports.getTempNativeFolder=()=> 'akuma-natives';
+exports.getModConfiguration=()=>({mods:{}});
+exports.getLaunchDetached=()=>false;
+exports.getMaxRAM=()=>`${settings.ram}M`;
+exports.getMinRAM=()=> '1024M';
+exports.getJVMOptions=()=>[];
+exports.getAutoConnect=()=>true;
+exports.getFullscreen=()=>settings.fullscreen;
+exports.getGameWidth=()=>settings.width;
+exports.getGameHeight=()=>settings.height;

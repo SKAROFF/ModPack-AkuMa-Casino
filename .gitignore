@@ -1,0 +1,8 @@
+node_modules/
+dist-akuma/
+private-admin/
+private-pack*/
+qa/
+publication/
+reports/
+*.pem
