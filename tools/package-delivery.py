@@ -14,6 +14,8 @@ for name in ['package.json','pnpm-lock.yaml','electron-builder.akuma.yml','LICEN
 archive(out/f'AKUMA-Launcher-Sources-{version}.zip',files)
 if not (out/'AKUMA-Modpack-Candidat-PRIVE.zip').exists():archive(out/'AKUMA-Modpack-Candidat-PRIVE.zip',[(p,p.relative_to(root/'private-pack').as_posix()) for p in (root/'private-pack').rglob('*') if p.is_file()])
 installer=root/f'dist-akuma/AKUMA-Launcher-Preview-{version}-Windows.exe';shutil.copy2(installer,out/installer.name)
+portable=root/'dist-akuma/win-unpacked'
+archive(out/f'AKUMA-Launcher-Portable-{version}-Windows.zip',[(p,p.relative_to(portable).as_posix()) for p in portable.rglob('*') if p.is_file()])
 hashes={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in out.iterdir() if p.is_file() and p.suffix.lower() in {'.exe','.zip'}}
 (out/'SHA256SUMS.txt').write_text('\n'.join(f'{h}  {n}' for n,h in hashes.items())+'\n',encoding='utf-8')
 print(json.dumps({p.name:p.stat().st_size for p in out.iterdir() if p.is_file()},indent=2))

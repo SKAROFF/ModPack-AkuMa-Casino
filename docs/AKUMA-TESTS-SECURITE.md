@@ -18,4 +18,6 @@ La licence du programme Prism reste GPL-3, ses ressources gardent leurs licences
 
 Le dépôt est public mais sa publication initiale et six vérifications de droits restent à terminer. L’installateur de préversion n’a pas de certificat Authenticode. Ces limites empêchent de qualifier la version de production entièrement validée.
 
+Le programme compilé a été vérifié dans son archive : liaison Prism présente, ancien module OAuth exclu et aucun identifiant Entra requis. Son contrôle préalable a été exécuté et refuse bien le flux GitHub absent avec HTTP 404. L’installateur 0.2 a été compilé mais son lancement de test a échoué avec « Accès refusé » sous Windows ; aucun code de sortie d’installation n’est disponible. Ce test n’est pas réussi. Voir reports/prism-packaged-test.json et windows-prism-installer-test.json. Aucune protection Windows n’a été désactivée. La version portable contient le même programme compilé ; son démarrage graphique complet n’est pas présenté comme testé.
+
 Sources : https://prismlauncher.org/ et https://prismlauncher.org/wiki/getting-started/command-line-interface/.
