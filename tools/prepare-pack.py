@@ -31,7 +31,7 @@ if resource.exists():
         meta=json.loads(z.read('pack.mcmeta'))
     rel='resourcepacks/AkuMa-Official.zip';target=dest/rel;target.parent.mkdir(exist_ok=True);shutil.copy2(resource,target)
     rights[rel]={'mode':'pending','evidence':'Pack local récent retrouvé ; vérifier autorisations de toutes les ressources avant publication','packFormat':meta.get('pack',{}).get('pack_format')}
-settings={'version':'1.0.0','fabric':audit['fabric'],'baseUrl':'https://VOTRE-DOMAINE-AKUMA','rights':rights}
+settings={'version':'1.0.0','fabric':audit['fabric'],'assetLayout':'github-release','baseUrl':'https://github.com/SKAROFF/ModPack-AkuMa-Casino/releases/download/pack-1.0.0','rights':rights}
 (root/'reports/publication-candidate.json').write_text(json.dumps(settings,indent=2,ensure_ascii=False),encoding='utf-8')
 (root/'reports/pack-selection.json').write_text(json.dumps({'excludedServerUtilities':excluded,'candidateMods':len(list((dest/'mods').glob('*.jar'))),'filesPendingReview':sum(r['mode']=='pending' for r in rights.values()),'resourcepack':str(resource)},indent=2,ensure_ascii=False),encoding='utf-8')
 print(f'Candidate privée préparée : {len(rights)} fichiers, {len(excluded)} utilitaires serveur exclus. Publication bloquée tant que les droits restent pending.')

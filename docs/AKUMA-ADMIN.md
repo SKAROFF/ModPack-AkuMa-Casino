@@ -4,6 +4,8 @@ La préversion Windows 0.1.0 contient le launcher, le moteur Helios et le systè
 
 ## Hébergement nécessaire
 
+L’hébergement retenu pour ce projet est désormais GitHub Releases sur `SKAROFF/ModPack-AkuMa-Casino`. Suivre d’abord `AKUMA-GITHUB.md`. L’option R2 ci-dessous reste une alternative ; aucun abonnement supplémentaire n’est nécessaire pour simplement utiliser les releases du dépôt public.
+
 Un espace public HTTPS suffit : `latest.json`, `versions/` et `objects/`. Il ne contient aucune donnée de joueur ni clé privée. Aucun service permanent supplémentaire n’est nécessaire. Les mods identifiés sur Modrinth et les fichiers CurseForge autorisés sont téléchargés directement depuis leurs sources ; votre hébergement sert surtout vos composants AkuMa, configurations et ressources autorisées.
 
 Cloudflare R2 Standard est une option adaptée, sous réserve de votre choix et de la création de votre compte. Le tarif publié inclut actuellement 10 Go-mois de stockage, un million d’opérations de classe A et dix millions de classe B par mois dans le palier gratuit, avec trafic sortant gratuit. Au-delà, stockage et opérations sont facturés. Un domaine personnalisé Cloudflare est conseillé pour la production ; l’adresse `r2.dev` est réservée au développement et soumise à des limites. Un domaine peut entraîner un coût distinct. Aucun compte payant ou abonnement n’a été ouvert pour vous.

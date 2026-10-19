@@ -8,6 +8,7 @@ La mise en service publique nécessite encore une application Microsoft approuv�
 
 - Installation : docs/AKUMA-INSTALLATION.md
 - Publication, Microsoft et hébergement : docs/AKUMA-ADMIN.md
+- Hébergement choisi sur GitHub Releases : docs/AKUMA-GITHUB.md
 - Résultats et limites : docs/AKUMA-TESTS-SECURITE.md
 - Droits des fichiers : reports/publication-candidate.json
 - Comparaison du pack fourni : reports/user-archive-audit.json

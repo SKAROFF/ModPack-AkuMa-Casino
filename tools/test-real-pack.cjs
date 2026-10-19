@@ -1,13 +1,13 @@
 const fs=require('node:fs/promises'),path=require('node:path'),crypto=require('node:crypto'),http=require('node:http');
 const {publish}=require('./publish.cjs'),{sync,hash,verifyEnvelope}=require('../desktop/updater.cjs');
 (async()=>{
-    const base=path.resolve('qa/real-pack'),source=path.resolve('private-pack'),dist=path.join(base,'distribution'),game=path.join(base,'instance');await fs.mkdir(base,{recursive:true});
+    await fs.mkdir(path.resolve('qa'),{recursive:true});const base=await fs.mkdtemp(path.join(path.resolve('qa'),'real-pack-')),source=path.resolve('private-pack'),dist=path.join(base,'distribution'),game=path.join(base,'instance');
     const cfg=JSON.parse(await fs.readFile('reports/publication-candidate.json','utf8'));
     const server=http.createServer(async(req,res)=>{try{res.end(await fs.readFile(path.join(dist,req.url)));}catch{res.writeHead(404).end();}});await new Promise(r=>server.listen(0,'127.0.0.1',r));
     const {privateKey,publicKey}=crypto.generateKeyPairSync('ed25519');
     // Private local integration test: never published, and no persistent signing key.
     for(const r of Object.values(cfg.rights))Object.assign(r,{mode:'redistribute',evidence:'PRIVATE LOCAL TEST ONLY. Not authorized for publication.'});
-    cfg.baseUrl=`http://127.0.0.1:${server.address().port}`;cfg.version='1.0.0';
+    cfg.baseUrl=`http://127.0.0.1:${server.address().port}`;cfg.version='1.0.0';cfg.assetLayout='static';
     try{
         const v1=await publish(source,dist,cfg,privateKey);const verified=verifyEnvelope(JSON.parse(await fs.readFile(path.join(dist,'latest.json'))),publicKey);const install=await sync(game,verified,{dev:true,allowedHosts:[]});
         const personal=path.join(game,'options.txt');await fs.writeFile(personal,'PERSONAL SETTINGS');
