@@ -39,3 +39,7 @@ Sources : [Prism officiel](https://prismlauncher.org/), [interface de lancement]
 ## Construction 0.2.2
 
 Exécuter `pnpm dist` : la préparation récupère et vérifie l’archive officielle, puis la copie comme ressource dans le portable et l’installateur AkuMa. L’archive ne contient aucun compte joueur. Une construction directe avec electron-builder nécessite auparavant `pnpm prepare:engine`. Le téléchargement reste un secours pour le développement sans ressource embarquée.
+
+## Correction du pack 1.0.1
+
+Le démarrage authentifié de Minecraft 1.21.1 a été confirmé par le joueur et les journaux. La connexion serveur a révélé que GlobalSpawn 2.0.0+1.21 doit aussi être présent côté client : le serveur synchronise le type d’argument `globalspawn:spawn_criterion`. Le pack 1.0.1 ajoute ce seul mod via son téléchargement officiel vérifié ; les 23 fichiers précédents restent identiques. La reconnexion au serveur après cette correction reste à valider avec le joueur.

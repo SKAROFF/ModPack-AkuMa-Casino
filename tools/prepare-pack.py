@@ -5,7 +5,8 @@ audit=json.loads((root/'reports/modpack-audit.json').read_text(encoding='utf-8')
 src=pathlib.Path(audit['instance']); dest=root/'private-pack';dest.mkdir(exist_ok=True)
 rights={};excluded=[]
 # Server utilities do not belong in a standard player distribution.
-server_utilities={'globalspawn','placeholder-api','worldedit','survivalfly'}
+# GlobalSpawn registers command argument types synchronized by this server; it is required on clients.
+server_utilities={'placeholder-api','worldedit','survivalfly'}
 sources={m['file']:m for m in json.loads((root/'reports/authorized-sources.json').read_text(encoding='utf-8'))}
 for m in audit['mods']:
     if m['id'] in server_utilities:
