@@ -1,6 +1,6 @@
 {
   "name": "akuma-launcher",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "productName": "AKUMA Launcher",
   "description": "Interface AkuMa et connexion Microsoft via Prism officiel",
   "author": "Daniel Scalzi (https://github.com/dscalzi/)",

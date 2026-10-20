@@ -85,10 +85,42 @@ async function recover(root) {
     await atomic(path.join(meta,'state.json'),journal.previous);
     await fs.unlink(path.join(meta,'journal.json'));
 }
+const lockedMessage='Installation verrouillée. Fermez Minecraft, Prism et les autres fenêtres AkuMa. Si le problème persiste, ouvrez Paramètres → Récupérer une installation bloquée.';
+async function acquireLock(root,allowRecovery=false) {
+    await fs.mkdir(root,{recursive:true});await noLinks(root,'.akuma');
+    const meta=path.join(root,'.akuma'),target=path.join(meta,'lock');await fs.mkdir(meta,{recursive:true});
+    await noLinks(root,'.akuma/lock');
+    let handle;
+    try{handle=await fs.open(target,'wx');}catch(e){
+        if(e.code!=='EEXIST')throw e;
+        if(!allowRecovery)throw Error(lockedMessage);
+        const stat=await fs.lstat(target);if(!stat.isFile()||stat.size>4096)throw Error('Verrou non reconnu : contactez l’administrateur.');
+        const before=await fs.readFile(target,'utf8');let owner;
+        try{owner=JSON.parse(before);}catch{}
+        if(owner){
+            if(owner.host!==require('node:os').hostname()||!Number.isSafeInteger(owner.pid)||owner.pid<=0)throw Error('Impossible de vérifier le propriétaire du verrou. Ne supprimez pas ce fichier manuellement.');
+            try{process.kill(owner.pid,0);throw Error('Une installation est encore active. Fermez son launcher avant de récupérer le profil.');}catch(e){if(e.code!=='ESRCH')throw e;}
+        }
+        // Called only after the UI confirms all launchers are closed, under AkuMa's exclusive operation.
+        // Keep the old lock as evidence; never discard the interrupted transaction journal.
+        const current=await fs.lstat(target);
+        if(current.ino!==stat.ino||current.mtimeMs!==stat.mtimeMs||await fs.readFile(target,'utf8')!==before)throw Error('Le verrou a changé. Réessayez après la fermeture des autres launchers.');
+        await fs.rename(target,path.join(meta,`lock-recovered-${crypto.randomUUID()}.json`));
+        try{handle=await fs.open(target,'wx');}catch(e){if(e.code==='EEXIST')throw Error(lockedMessage);throw e;}
+    }
+    const token=crypto.randomUUID();
+    try{await handle.writeFile(JSON.stringify({schema:1,pid:process.pid,host:require('node:os').hostname(),token,created:new Date().toISOString()}));await handle.sync();}
+    catch(e){await handle.close();await fs.unlink(target).catch(()=>{});throw e;}
+    return async()=>{await handle.close();try{const owner=JSON.parse(await fs.readFile(target,'utf8'));if(owner.token===token)await fs.unlink(target);}catch(e){if(e.code!=='ENOENT')throw e;}};
+}
+async function recoverInstallation(root){
+    const release=await acquireLock(root,true);
+    try{await recover(root);}finally{await release();}
+}
 async function sync(root,manifest,config,onProgress=()=>{}) {
     validate(manifest); await fs.mkdir(root,{recursive:true}); await noLinks(root,'.akuma');
     const meta=path.join(root,'.akuma'); await fs.mkdir(meta,{recursive:true});
-    const lock=await fs.open(path.join(meta,'lock'),'wx').catch(()=>{throw Error('Installation verrouillée. Fermez les autres launchers ; après un arrêt brutal, utilisez la procédure de récupération.');});
+    const release=await acquireLock(root);
     try {
         await recover(root);
         const previous=await readJson(path.join(meta,'state.json'),{version:null,files:[]});
@@ -124,11 +156,11 @@ async function sync(root,manifest,config,onProgress=()=>{}) {
             await fs.unlink(path.join(meta,'journal.json'));
         } catch(e) { await recover(root); throw e; }
         return {version:manifest.version,changed:changes.length,conflicts};
-    } finally { await lock.close(); await fs.unlink(path.join(meta,'lock')); }
+    } finally { await release(); }
 }
 async function rollback(root) {
     const meta=path.join(root,'.akuma'); const journal=await readJson(path.join(meta,'rollback.json'),null);
     if(!journal)throw Error('Aucune version précédente');
     await atomic(path.join(meta,'journal.json'),journal); await recover(root); await fs.unlink(path.join(meta,'rollback.json'));
 }
-module.exports={hash,safePath,allowedUrl,validate,verifyEnvelope,feed,sync,rollback,download,response,atomic};
+module.exports={hash,safePath,allowedUrl,validate,verifyEnvelope,feed,sync,rollback,download,response,atomic,recoverInstallation};

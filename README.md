@@ -1,10 +1,10 @@
 # AkuMa Launcher
 
-Launcher Windows x64 0.2.2 pour Minecraft Java 1.21.1 / Fabric 0.19.5. Interface Royal AkuMa, modpack 1.0.0 avec manifestes signés et connexion Microsoft via le composant officiel Prism inclus.
+Launcher Windows x64 0.2.3 pour Minecraft Java 1.21.1 / Fabric 0.19.5. Interface Royal AkuMa, modpack 1.0.0 avec manifestes signés et connexion Microsoft via le composant officiel Prism inclus.
 
 ## Jouer
 
-Dans Releases, télécharger AKUMA-Launcher-Portable-0.2.2-Windows.zip, extraire tout le dossier puis ouvrir AKUMA Launcher.exe. Aucune installation séparée de Prism n’est nécessaire.
+Dans Releases, télécharger AKUMA-Launcher-Portable-0.2.3-Windows.zip, extraire tout le dossier puis ouvrir AKUMA Launcher.exe. Aucune installation séparée de Prism n’est nécessaire.
 
 La première fois, cliquer sur Compte Microsoft, terminer la configuration de Prism, ajouter son compte Minecraft Java dans Paramètres → Comptes → Ajouter Microsoft, puis fermer Prism. Revenir dans AkuMa et cliquer sur Jouer sur AkuMa : le pack se synchronise avant le lancement direct de Minecraft.
 
@@ -23,3 +23,7 @@ Les clés privées de signature, profils de compte, caches et données personnel
 ## Attribution
 
 Interface issue de Helios Launcher, Daniel Scalzi, sous MIT. helios-core 2.3.0 sous LGPL-3.0-only : sources correspondantes dans vendor-source/helios-core. Prism Launcher 11.1.1 officiel, non modifié, sous GPL-3.0 : [distribution et sources correspondantes](https://github.com/PrismLauncher/PrismLauncher/releases/tag/11.1.1). Les licences de Prism restent dans son archive originale. Aucun identifiant développeur Microsoft de Prism n’est copié dans AkuMa. Non affilié à Mojang ou Microsoft.
+
+## Installation verrouillée
+
+Fermer Minecraft, Prism et les anciennes fenêtres AkuMa. Ouvrir la version 0.2.3, puis Paramètres → Récupérer une installation bloquée. Après confirmation et récupération, revenir dans Accueil → Jouer sur AkuMa. Les données du joueur sont conservées.

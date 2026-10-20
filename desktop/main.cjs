@@ -42,6 +42,12 @@ async function operation(name,args){
         try{const s=await getServerStatus(767,host,Number(p)||25565);return {online:true,message:`${s.players.online} / ${s.players.max} joueurs`};}catch{return {online:false,message:'Serveur indisponible'};}
     }
     if(name==='check'){const m=await updater.feed(config),installed=await read(path.join(gameDirectory(),'.akuma/state.json'),{});return {remote:m.version,installed:installed.version||null,available:m.version!==installed.version};}
+    if(name==='recoverInstallation')return exclusive(async()=>{
+        const choice=await dialog.showMessageBox(win,{type:'question',buttons:['Récupérer','Annuler'],defaultId:1,cancelId:1,message:'Récupérer une installation bloquée ?',detail:'Fermez d’abord Minecraft, Prism et toutes les autres fenêtres de launcher qui utilisent ce dossier. Le verrou ancien sera conservé en sauvegarde et toute installation interrompue sera restaurée. Votre compte, vos mondes et vos préférences sont conservés.'});
+        if(choice.response!==0)return 'Récupération annulée.';
+        await updater.recoverInstallation(gameDirectory());
+        return 'Installation débloquée. Revenez dans Accueil et cliquez sur Jouer sur AkuMa.';
+    });
     if(name==='rollback')return exclusive(async()=>{await updater.rollback(gameDirectory());return 'Version précédente restaurée. La prochaine synchronisation suivra la version publiée.';});
     if(name==='launcherUpdate')return exclusive(async()=>{
         if(!config.launcherFeedUrl||!config.publicKey)throw Error('Mises à jour du launcher à configurer par l’administrateur.');

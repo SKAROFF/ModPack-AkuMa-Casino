@@ -43,3 +43,15 @@ Exécuter `pnpm dist` : la préparation récupère et vérifie l’archive offic
 ## Correction du pack 1.0.1
 
 Le démarrage authentifié de Minecraft 1.21.1 a été confirmé par le joueur et les journaux. La connexion serveur a révélé que GlobalSpawn 2.0.0+1.21 doit aussi être présent côté client : le serveur synchronise le type d’argument `globalspawn:spawn_criterion`. Le pack 1.0.1 ajoute ce seul mod via son téléchargement officiel vérifié ; les 23 fichiers précédents restent identiques. La reconnexion au serveur après cette correction reste à valider avec le joueur.
+
+## Modpack 1.0.3 — Royal Puff Highrise
+
+Publié le 20 octobre 2026 dans la release `pack-1.0.3`, marquée Latest. Le flux signé du launcher fournit Royal Puff 3.0.1 à la place de 2.2.3 ; les 23 autres fichiers restent identiques au pack 1.0.1. Le manifeste `launcher-latest.json` 0.2.2 est conservé. La synchronisation réelle du profil AkuMa Launcher a été effectuée depuis le flux public : deux changements, zéro conflit, empreintes de tous les fichiers gérés vérifiées. Le lancement Minecraft après cette mise à jour reste à confirmer.
+
+## Modpack 1.0.4 — roues, menu et ambiance Highrise
+
+Publié le 20 octobre 2026 avec Royal Puff 3.0.2. Dimensions et rotation lente des roues Classic alignées sur Grand, descriptions séparées des logos, musique ambiante Highrise avec remplacement exclusif pendant les bonus. Casques classiques de base : poids 4 sur les rangées actives et 16 sur les rangées bloquées ; profils existants complétés en mémoire si ces deux champs sont absents. Le scénario Hazard forcé conserve maintenant les casques naturellement tirés. La simulation comparative de 100 000 tours observe 3,08 % de casques classiques en bas et 11,38 % en haut, avec une fréquence de bonus passant de 1,692 % à 2,043 % ; il s’agit de mesures de l’adaptation AkuMa, pas du RTP original. Serveur mis à jour avec sauvegarde de 3.0.0 ; profil AkuMa Launcher synchronisé depuis le flux public signé, deux changements et zéro conflit. Vérification des empreintes de tous les fichiers gérés effectuée. Nouvelle recette complète dans Minecraft non exécutée.
+
+## Launcher 0.2.3 — récupération après interruption
+
+Les nouveaux verrous portent un identifiant unique, le processus propriétaire et le nom de machine. Ils sont libérés uniquement par leur propriétaire. Un ancien verrou vide n’est pas supprimé automatiquement : Paramètres → Récupérer une installation bloquée ouvre une confirmation après fermeture des autres launchers. La récupération conserve le verrou ancien en sauvegarde et restaure la transaction interrompue. Un propriétaire encore actif ou situé sur une autre machine bloque cette action. Les erreurs d’accès au disque ne sont plus présentées comme des conflits de verrou. Quatorze tests couvrent notamment le verrou vide, le processus actif, le propriétaire disparu, l’écriture interrompue, les liens et la conservation des préférences.
