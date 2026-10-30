@@ -1,0 +1,18 @@
+name = "akuma-launcher"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+
+[vars]
+B2_BUCKET = "AkumaModpack"
+B2_BUCKET_ID = "5d96311bb4de8cc3a21e0311"
+# Folder of the bucket that holds the pack ("" in production, "dev/" for local tests).
+PACK_PREFIX = ""
+MAIL_FROM = "akuma.launcher.mc@gmail.com"
+
+# Secrets, set with `npx wrangler secret put NAME` (never in this file):
+# B2_KEY_ID, B2_APP_KEY, BREVO_API_KEY
+
+[[d1_databases]]
+binding = "DB"
+database_name = "akuma-accounts"
+database_id = "b68feed6-4cf1-42ea-8257-d4653a505f27"

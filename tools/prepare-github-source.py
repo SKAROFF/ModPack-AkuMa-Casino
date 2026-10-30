@@ -1,9 +1,9 @@
 import pathlib,shutil
 root=pathlib.Path(__file__).resolve().parents[1];dest=root/'github-distribution'
-for folder in ['desktop','tools','tests','docs','vendor-source']:
+for folder in ['desktop','tools','tests','docs','vendor-source','service']:
     for p in (root/folder).rglob('*'):
         rel=p.relative_to(root)
-        if p.is_file() and not any(s in {'.git','node_modules','__pycache__'} for s in rel.parts):
+        if p.is_file() and not any(s in {'.git','node_modules','__pycache__','.wrangler'} for s in rel.parts) and p.name!='.dev.vars':
             target=dest/rel;target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(p,target)
 for name in ['package.json','pnpm-lock.yaml','electron-builder.akuma.yml','LICENSE.txt','README.md']:
     shutil.copy2(root/name,dest/name)

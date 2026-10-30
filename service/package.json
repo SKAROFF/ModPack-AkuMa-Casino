@@ -1,0 +1,13 @@
+{
+  "name": "akuma-launcher-service",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev --local",
+    "deploy": "wrangler deploy",
+    "db:local": "wrangler d1 execute akuma-accounts --local --file=schema.sql",
+    "db:remote": "wrangler d1 execute akuma-accounts --remote --file=schema.sql"
+  },
+  "devDependencies": {
+    "wrangler": "4.156.0"
+  }
+}

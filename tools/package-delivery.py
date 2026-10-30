@@ -5,10 +5,11 @@ def archive(target,files):
     with zipfile.ZipFile(target,'w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
         for p,name in files:z.write(p,name)
 files=[]
-for folder in ['desktop','tools','tests','docs','reports','vendor-source']:
+for folder in ['desktop','tools','tests','docs','reports','vendor-source','service']:
     for p in (root/folder).rglob('*'):
-        if p.is_file() and not any(s in {'.git','node_modules','__pycache__'} for s in p.relative_to(root).parts) and p.suffix.lower() not in {'.log','.png'}:files.append((p,p.relative_to(root).as_posix()))
-files.append((root/'desktop/akuma-art.png','desktop/akuma-art.png'))
+        rel=p.relative_to(root)
+        # report screenshots stay out; the launcher's own images ship with the sources
+        if p.is_file() and not any(s in {'.git','node_modules','__pycache__','.wrangler'} for s in rel.parts) and p.name!='.dev.vars' and p.suffix.lower()!='.log' and (p.suffix.lower()!='.png' or rel.parts[0]=='desktop'):files.append((p,rel.as_posix()))
 for name in ['package.json','pnpm-lock.yaml','electron-builder.akuma.yml','LICENSE.txt','README.md']:
     files.append((root/name,name))
 archive(out/f'AKUMA-Launcher-Sources-{version}.zip',files)

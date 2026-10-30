@@ -29,7 +29,8 @@ async function response(url,hosts,dev,headers={}) {
     for(let n=0;n<6;n++) {
         allowedUrl(url,hosts,dev);
         const r=await fetch(url,{headers,redirect:'manual',signal:AbortSignal.timeout(60000)});
-        if([301,302,303,307,308].includes(r.status)) { url=new URL(r.headers.get('location'),url).href; continue; }
+        if([301,302,303,307,308].includes(r.status)) { const next=new URL(r.headers.get('location'),url); if(next.host!==new URL(url).host) { const {Authorization,...rest}=headers; headers=rest; } url=next.href; continue; }
+        if(r.status===401) throw Error('Connexion AkuMa requise : connecte-toi à ton compte AkuMa dans le launcher.');
         if(!r.ok) throw Error(`Distribution indisponible (HTTP ${r.status})`);
         return r;
     }
@@ -41,9 +42,9 @@ function validate(m) {
     for(const f of m.files) { safePath(f.path); const k=f.path.toLowerCase(); if(seen.has(k)) throw Error('Chemin dupliqué'); seen.add(k); if(!/^[a-f0-9]{64}$/.test(f.sha256) || !Number.isSafeInteger(f.size) || f.size<0 || f.size>2**31 || !['managed','preserve'].includes(f.policy)) throw Error('Fichier invalide'); }
     return m;
 }
-async function feed(config) {
+async function feed(config,token) {
     if(!config.feedUrl || !config.publicKey) throw Error('Distribution à configurer par l’administrateur');
-    const r=await response(config.feedUrl,config.allowedHosts);
+    const r=await response(config.feedUrl,config.allowedHosts,config.dev,token?{Authorization:`Bearer ${token}`}:{});
     const body=await r.text(); if(body.length>4e6) throw Error('Manifeste trop volumineux');
     return verifyEnvelope(JSON.parse(body),config.publicKey);
 }
@@ -52,14 +53,15 @@ function verifyEnvelope(envelope,publicKey) {
     if(!crypto.verify(null,bytes,publicKey,Buffer.from(envelope.signature,'base64'))) throw Error('Signature de publication invalide');
     return validate(JSON.parse(bytes));
 }
-async function download(f,target,hosts,dev=false) {
+// auth: short-lived token for the private B2 bucket, sent only to its download host.
+async function download(f,target,hosts,dev=false,auth=null) {
     await fs.mkdir(path.dirname(target),{recursive:true});
     for(let retry=0;retry<3;retry++) {
         try {
             let offset=await exists(target)?(await fs.stat(target)).size:0;
             if(offset===f.size && hash(await fs.readFile(target))===f.sha256) return;
             if(offset>=f.size) { await fs.writeFile(target,''); offset=0; }
-            const r=await response(f.url,hosts,dev,offset?{Range:`bytes=${offset}-`}:{});
+            const r=await response(f.url,hosts,dev,{...(offset?{Range:`bytes=${offset}-`}:{}),...(auth&&new URL(f.url).hostname===auth.host?{Authorization:auth.token}:{})});
             const append=offset>0 && r.status===206;
             if(append && !r.headers.get('content-range')?.startsWith(`bytes ${offset}-`)) throw Error('Reprise invalide');
             let received=append?offset:0;
@@ -131,7 +133,7 @@ async function sync(root,manifest,config,onProgress=()=>{}) {
             const present=await exists(dest), local=present?hash(await fs.readFile(dest)):null;
             if(local===f.sha256) continue;
             const staged=path.join(meta,'cache',f.sha256);
-            await download(f,staged,config.allowedHosts,config.dev);
+            await download(f,staged,config.allowedHosts,config.dev,config.b2);
             onProgress({text:`Vérification ${i+1}/${manifest.files.length}`,percent:Math.round((i+1)/manifest.files.length*100)});
             if(present && (!old.has(f.path) || f.policy==='preserve' && local!==old.get(f.path).sha256)) {
                 const proposal=path.join(meta,'conflicts',manifest.version,f.path); await fs.mkdir(path.dirname(proposal),{recursive:true}); await fs.copyFile(staged,proposal); conflicts.push(f.path);

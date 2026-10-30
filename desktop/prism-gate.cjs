@@ -1,7 +1,7 @@
 const fs=require('node:fs/promises'),path=require('node:path');
 const {feed,hash,safePath}=require('./updater.cjs');
-async function verify(root,config){
-    const manifest=await feed(config);
+async function verify(root,config,token){
+    const manifest=await feed(config,token);
     const state=JSON.parse(await fs.readFile(path.join(root,'.akuma','state.json'),'utf8'));
     if(state.version!==manifest.version)throw Error('Une mise à jour AkuMa est disponible. Fermez Prism et lancez la mise à jour dans AkuMa Launcher.');
     for(const name of ['journal.json','lock'])try{await fs.stat(path.join(root,'.akuma',name));throw Error('Mise à jour en cours ou interrompue : réparer avec AkuMa Launcher.');}catch(e){if(e.code!=='ENOENT')throw e;}

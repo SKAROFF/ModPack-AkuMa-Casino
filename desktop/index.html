@@ -1,10 +1,122 @@
-<!doctype html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'"><title>AKUMA LAUNCHER</title><link rel="stylesheet" href="style.css"></head><body>
-<aside><div class="monogram">A<span>♛</span></div><strong>AKUMA</strong><small>LAUNCHER</small><nav><button id="home" class="selected">◈ &nbsp; Accueil</button><button id="settingsTab">⚙ &nbsp; Paramètres</button><button id="discord">◌ &nbsp; Discord</button></nav><footer>ROYAL AKUMA<br><span>Minecraft Java · Fabric 1.21.1</span></footer></aside>
-<main><header><span class="eyebrow">VOTRE ROYAUME VOUS ATTEND</span><button id="login">Compte Microsoft · Prism ↗</button></header>
-<section id="homePanel"><div class="hero"><div class="tag">L’EXPÉRIENCE OFFICIELLE AKUMA</div><h1>Entrez dans<br>la légende<span>.</span></h1><p>Un monde à explorer. Un empire à bâtir.<br>Toute l’expérience AkuMa, toujours à jour.</p><div class="chips"><span>JAVA 21</span><span>FABRIC 1.21.1</span><span id="packVersion">PACK À INSTALLER</span></div><div class="castle"><i></i><i></i><i></i><div class="gate">A</div></div></div>
-<div class="cards"><article><div class="eyebrow">LE ROYAUME EN DIRECT</div><h3><span id="dot">●</span> <span id="serverStatus">Vérification du serveur…</span></h3><small>Connexion directe au démarrage du jeu</small></article><article><div class="eyebrow">ACTUALITÉS AKUMA</div><p id="news"></p></article></div>
-<div class="playbar"><div><b id="operation">Bienvenue sur AkuMa</b><p id="updateStatus">Vérification des mises à jour au démarrage</p><progress id="progress" value="0" max="100"></progress></div><button id="play">JOUER SUR AKUMA <span>→</span></button></div><p id="notice" role="status"></p></section>
-<section id="settingsPanel" hidden><h2>Votre expérience</h2><p>Les mondes, captures et préférences personnels sont conservés.</p><form id="settingsForm"><label>Mémoire allouée (Mo)<input id="ram" type="number" min="1024" step="512"></label><label>Largeur<input id="width" type="number" min="640" max="7680"></label><label>Hauteur<input id="height" type="number" min="480" max="4320"></label><label class="check"><input id="fullscreen" type="checkbox"> Plein écran</label><button type="submit">Enregistrer</button></form><div class="actions"><button id="recoverInstallation">Récupérer une installation bloquée</button><button id="repair">Réparer le modpack</button><button id="rollback">Restaurer la version précédente</button><button id="chooseFolder">Choisir le dossier Minecraft</button><button id="launcherUpdate">Mettre à jour le launcher</button><button id="folder">Ouvrir le dossier du jeu</button><button id="logout">Déconnexion dans Prism</button></div><p id="settingsNotice" role="status"></p><p>Installation : %APPDATA%\AkuMaLauncher. Langue : français.<br>Les téléchargements interrompus reprennent automatiquement.</p></section>
-<footer>AKUMA LAUNCHER <span id="appVersion"></span> <span>Prism officiel · Mises à jour AkuMa · Non affilié à Mojang ou Microsoft</span></footer></main><script src="renderer.js"></script></body></html>
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'">
+<title>AKUMA LAUNCHER</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-time="day" data-server="checking" data-view="home">
 
+<aside class="sidebar">
+  <div class="emblem"><img src="scene/ball.png" alt=""><div><strong>AKUMA</strong><small>LAUNCHER</small></div></div>
+  <nav class="box menu" aria-label="Menu principal">
+    <button id="home" class="selected">Accueil</button>
+    <button id="accountTab">Compte AkuMa</button>
+    <button id="settingsTab">Paramètres</button>
+    <button id="discord">Discord</button>
+    <button id="login">Compte Microsoft</button>
+  </nav>
+  <div class="box tip"><b>Première partie ?</b><ol><li>Clique sur Compte Microsoft et connecte-toi dans Prism.</li><li>Ferme Prism.</li><li>Reviens ici et clique sur Jouer.</li></ol></div>
+  <footer>AKUMA LAUNCHER <span id="appVersion"></span><br><span>Prism officiel · Mises à jour AkuMa</span></footer>
+</aside>
 
+<main>
+  <section class="scene">
+    <div class="layers" aria-hidden="true"><i class="stars"></i><i class="clouds"></i><i class="mountains"></i><i class="hills"></i><i class="trees"></i><i class="grass"></i></div>
+    <div class="title">
+      <h1>AkuMa</h1>
+      <div class="ribbon">L’aventure à Kanto</div>
+      <p class="tagline">Attrape, combats, explore. Ton modpack est toujours à jour.</p>
+      <div class="chips"><span>MINECRAFT 1.21.1</span><span>JAVA 21</span><span id="packVersion">PACK À INSTALLER</span></div>
+    </div>
+    <div class="box foe">
+      <div class="foe-name"><b>SERVEUR AKUMA</b><span id="dot" aria-hidden="true">●</span></div>
+      <div class="bar hp"><span>PV</span><i><b></b></i></div>
+      <p id="serverStatus">Vérification du serveur…</p>
+    </div>
+  </section>
+
+  <section id="homePanel" class="panel">
+    <article class="sign"><div class="sign-label">ACTUALITÉS AKUMA</div><p id="news"></p></article>
+    <div class="playbar">
+      <div class="box dialog">
+        <b id="operation">Bienvenue sur AkuMa</b>
+        <p id="updateStatus">Vérification des mises à jour au démarrage</p>
+        <div class="bar exp"><span>EXP</span><progress id="progress" value="0" max="100"></progress></div>
+      </div>
+      <button id="play"><img src="scene/ball.png" alt=""><span>JOUER<small>sur AkuMa</small></span></button>
+    </div>
+    <p id="notice" class="sr-only" role="status"></p>
+  </section>
+
+  <section id="accountPanel" class="panel" hidden>
+    <div id="signedOut" class="box account">
+      <div class="tabs" role="tablist"><button id="showLogin" class="selected" type="button">Continuer</button><button id="showSignup" type="button">Nouvelle partie</button></div>
+      <form id="loginForm">
+        <label>Pseudo ou e-mail<input id="loginId" autocomplete="username" required maxlength="254"></label>
+        <label>Mot de passe<input id="loginPassword" type="password" autocomplete="current-password" required maxlength="128"></label>
+        <button type="submit">Se connecter</button>
+      </form>
+      <form id="signupForm" hidden>
+        <label>Pseudo Minecraft<input id="signupPseudo" autocomplete="nickname" required pattern="[A-Za-z0-9_]{3,16}" maxlength="16" title="3 à 16 caractères : lettres, chiffres ou _"></label>
+        <label>Adresse e-mail<input id="signupEmail" type="email" autocomplete="email" required maxlength="254"></label>
+        <label>Mot de passe (10 caractères minimum)<input id="signupPassword" type="password" autocomplete="new-password" required minlength="10" maxlength="128"></label>
+        <label>Confirme le mot de passe<input id="signupConfirm" type="password" autocomplete="new-password" required minlength="10" maxlength="128"></label>
+        <button type="submit">Créer mon compte</button>
+      </form>
+      <form id="verifyForm" hidden>
+        <p>Un code à 6 chiffres a été envoyé à <b id="verifyEmail"></b>. Pense à regarder dans les spams.</p>
+        <label>Code de confirmation<input id="verifyCode" inputmode="numeric" autocomplete="one-time-code" required pattern="[0-9]{6}" maxlength="6"></label>
+        <div class="row"><button id="resendCode" type="button" class="link">Renvoyer le code</button><button type="submit">Confirmer</button></div>
+      </form>
+    </div>
+    <div id="signedIn" class="box account card" hidden>
+      <div class="card-head"><img src="scene/ball.png" alt=""><div><small>CARTE DE DRESSEUR</small><b id="cardPseudo"></b></div></div>
+      <p>E-mail : <span id="cardEmail"></span></p>
+      <p>Ton compte est connecté : les mises à jour du modpack se téléchargent automatiquement.</p>
+      <div class="row"><button id="akumaLogout" type="button">Se déconnecter</button></div>
+      <form id="deleteForm" class="danger">
+        <label>Supprimer mon compte (mot de passe)<input id="deletePassword" type="password" autocomplete="current-password" required maxlength="128"></label>
+        <button type="submit">Supprimer</button>
+      </form>
+    </div>
+    <p id="accountNotice" class="box dialog" role="status"></p>
+  </section>
+
+  <section id="settingsPanel" class="panel" hidden>
+    <div class="settings-grid">
+      <div class="box">
+        <h2>Options</h2>
+        <form id="settingsForm">
+          <label>Mémoire allouée (Mo)<input id="ram" type="number" min="1024" step="512"></label>
+          <label>Largeur<input id="width" type="number" min="640" max="7680"></label>
+          <label>Hauteur<input id="height" type="number" min="480" max="4320"></label>
+          <label class="check">Plein écran<input id="fullscreen" type="checkbox"></label>
+          <button type="submit">Enregistrer</button>
+        </form>
+      </div>
+      <div class="box">
+        <h2>Outils</h2>
+        <div class="actions">
+          <button id="recoverInstallation">Récupérer une installation bloquée</button>
+          <button id="repair">Réparer le modpack</button>
+          <button id="rollback">Restaurer la version précédente</button>
+          <button id="chooseFolder">Choisir le dossier Minecraft</button>
+          <button id="launcherUpdate">Mettre à jour le launcher</button>
+          <button id="folder">Ouvrir le dossier du jeu</button>
+          <button id="logout">Déconnexion dans Prism</button>
+        </div>
+      </div>
+    </div>
+    <p id="settingsNotice" class="box dialog" role="status"></p>
+    <p class="fine">Les mondes, captures et préférences personnels sont conservés. Installation : %APPDATA%\AkuMaLauncher. Les téléchargements interrompus reprennent automatiquement.</p>
+  </section>
+
+  <footer class="legal">Projet de fans non officiel · Non affilié à Mojang, Microsoft, Nintendo, Game Freak ou The Pokémon Company</footer>
+</main>
+
+<script src="renderer.js"></script>
+</body>
+</html>

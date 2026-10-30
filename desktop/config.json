@@ -1,5 +1,6 @@
 {
   "authProvider": "prism-official",
+  "accountUrl": "https://akuma-launcher.akuma-launcher-service.workers.dev",
   "feedUrl": "https://github.com/SKAROFF/ModPack-AkuMa-Casino/releases/latest/download/latest.json",
   "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAouexaXkhN2b+7G8qY+SxFpyPW/ukQggDF+A8Ssdm6WM=\n-----END PUBLIC KEY-----\n",
   "serverAddress": "akuma-casino.mine.fun",
@@ -10,7 +11,9 @@
     "edge.forgecdn.net",
     "mediafilez.forgecdn.net",
     "github.com",
-    "release-assets.githubusercontent.com"
+    "release-assets.githubusercontent.com",
+    "f003.backblazeb2.com",
+    "akuma-launcher.akuma-launcher-service.workers.dev"
   ],
   "news": "Bienvenue au Royaume AkuMa. Rejoignez notre Discord pour les nouveautés et les prochaines ouvertures du launcher."
 }
