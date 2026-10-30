@@ -22,3 +22,13 @@ test('a manifest names exactly one loader',()=>{
     assert.throws(()=>validate({...base,neoforge:'21.1.265',options:{resourcePacks:['file/x"']}}),/Options/);
     assert.equal(validate({...base,neoforge:'21.1.265',options:{resourcePacks:['file/AkuMa - Pixelmon FR complet.zip'],lang:'fr_fr'}}).options.lang,'fr_fr');
 });
+test('mods the pack does not list are reported, kept ones are not',async()=>{
+    const {unknownMods}=require('../desktop/updater.cjs'),root=await fs.mkdtemp(path.join(os.tmpdir(),'akuma-mods-'));
+    try{
+        await fs.mkdir(path.join(root,'mods/mcef-cache'),{recursive:true});
+        for(const n of ['pack.jar','Old-Fabric.jar','kept.jar','notes.txt'])await fs.writeFile(path.join(root,'mods',n),'x');
+        const manifest={files:[{path:'mods/Pack.jar'}]};
+        assert.deepEqual(await unknownMods(root,manifest,new Set(['kept.jar'])),['Old-Fabric.jar']);
+        assert.deepEqual(await unknownMods(path.join(root,'missing'),manifest),[]);
+    }finally{await fs.rm(root,{recursive:true,force:true});}
+});

@@ -169,4 +169,10 @@ async function rollback(root) {
     if(!journal)throw Error('Aucune version précédente');
     await atomic(path.join(meta,'journal.json'),journal); await recover(root); await fs.unlink(path.join(meta,'rollback.json'));
 }
-module.exports={hash,safePath,allowedUrl,validate,verifyEnvelope,feed,sync,rollback,download,response,atomic,recoverInstallation};
+// Jars in mods/ that the pack does not list and the player did not choose to keep.
+async function unknownMods(root,manifest,kept=new Set()) {
+    const known=new Set(manifest.files.map(f=>f.path.toLowerCase()));
+    const entries=await fs.readdir(path.join(root,'mods'),{withFileTypes:true}).catch(e=>{if(e.code==='ENOENT')return [];throw e;});
+    return entries.filter(e=>e.isFile() && /\.jar$/i.test(e.name) && !known.has(`mods/${e.name}`.toLowerCase()) && !kept.has(e.name)).map(e=>e.name);
+}
+module.exports={unknownMods,hash,safePath,allowedUrl,validate,verifyEnvelope,feed,sync,rollback,download,response,atomic,recoverInstallation};

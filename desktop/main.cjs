@@ -49,6 +49,34 @@ async function launcherManifest(){
     if(m.appId!=='fr.akuma.launcher'||!semver.valid(m.version)||!semver.gt(m.version,app.getVersion())||!/^https:\/\/.+\.exe$/.test(m.url)||!Number.isSafeInteger(m.size)||m.size<1||m.size>500e6||!/^\w{64}$/.test(m.sha256))throw Error('Aucune nouvelle version valide du launcher.');
     return m;
 }
+// The NSIS installer leaves its uninstaller next to the exe; a portable copy has none.
+const installedCopy=()=>app.isPackaged&&require('node:fs').existsSync(path.join(path.dirname(process.execPath),'Uninstall AKUMA Launcher.exe'));
+const installedLauncher=()=>path.join(process.env.LOCALAPPDATA||'','Programs','AKUMA Launcher','AKUMA Launcher.exe');
+let pendingUpdate=null;
+async function prepareUpdate(){
+    const m=await launcherManifest(),target=path.join(root,'updates',`AKUMA-${m.version}.exe`);
+    await updater.download(m,target,config.allowedHosts);
+    return pendingUpdate={version:m.version,target};
+}
+function runInstaller(target,relaunch){
+    // /S installs silently over the current copy; --force-run starts the new launcher afterwards.
+    require('node:child_process').spawn(target,['/S',...(relaunch?['--force-run']:[])],{detached:true,stdio:'ignore'}).unref();
+}
+async function cleanUpdates(){
+    const semver=require('semver'),dir=path.join(root,'updates');
+    for(const name of await fs.readdir(dir).catch(()=>[])){
+        const v=/^AKUMA-(.+)\.exe$/.exec(name)?.[1];
+        if(v&&semver.valid(v)&&semver.lte(v,app.getVersion()))await fs.rm(path.join(dir,name),{force:true});
+    }
+}
+async function setAsideUnknownMods(m){
+    const dir=path.join(gameDirectory(),'mods'),kept=new Set(settings.keptMods||[]),unknown=await updater.unknownMods(gameDirectory(),m,kept);
+    if(!unknown.length)return;
+    const choice=await dialog.showMessageBox(win,{type:'question',buttons:['Mettre de côté','Garder'],defaultId:0,cancelId:1,message:'Des mods ne font pas partie du pack AkuMa',detail:`Ils peuvent empêcher le jeu de démarrer ou de rejoindre le serveur :\n\n${unknown.join('\n')}\n\n« Mettre de côté » les déplace dans le dossier mods-retires, sans rien supprimer. « Garder » ne te le demandera plus pour ces fichiers.`});
+    if(choice.response!==0){settings={...settings,keptMods:[...kept,...unknown]};await updater.atomic(path.join(root,'settings.json'),settings);return;}
+    const out=path.join(gameDirectory(),'mods-retires');await fs.mkdir(out,{recursive:true});
+    for(const n of unknown){const target=require('node:fs').existsSync(path.join(out,n))?path.join(out,`${Date.now()}-${n}`):path.join(out,n);await fs.rename(path.join(dir,n),target);}
+}
 async function operation(name,args){
     if(name==='state')return state();
     if(name==='account'){const s=await session();return s&&{pseudo:s.pseudo,email:s.email};}
@@ -92,18 +120,23 @@ async function operation(name,args){
         return 'Installation débloquée. Revenez dans Accueil et cliquez sur Jouer sur AkuMa.';
     });
     if(name==='rollback')return exclusive(async()=>{await updater.rollback(gameDirectory());return 'Version précédente restaurée. La prochaine synchronisation suivra la version publiée.';});
-    if(name==='launcherCheck'){try{return (await launcherManifest()).version;}catch{return null;}}
+    if(name==='launcherCheck'){
+        await cleanUpdates().catch(()=>{});
+        const portableDuplicate=!installedCopy()&&app.isPackaged&&require('node:fs').existsSync(installedLauncher());
+        let version=null;try{version=installedCopy()?(await prepareUpdate()).version:(await launcherManifest()).version;}catch{}
+        return {version,ready:!!pendingUpdate,portableDuplicate};
+    }
     if(name==='launcherUpdate')return exclusive(async()=>{
-        const m=await launcherManifest();
-        const target=path.join(root,'updates',`AKUMA-${m.version}.exe`);await updater.download(m,target,config.allowedHosts);
-        const choice=await dialog.showMessageBox(win,{type:'question',buttons:['Installer et fermer','Plus tard'],defaultId:1,cancelId:1,message:`Installer AKUMA Launcher ${m.version} ?`,detail:'L’installateur a été vérifié avec la clé de publication AkuMa et son empreinte SHA-256.'});
-        if(choice.response===0){const err=await shell.openPath(target);if(err)throw Error(err);app.quit();}return 'Mise à jour vérifiée.';
+        const update=pendingUpdate||await prepareUpdate();
+        if(installedCopy()){runInstaller(update.target,true);app.quit();return 'Installation de la mise à jour…';}
+        const err=await shell.openPath(update.target);if(err)throw Error(err);app.quit();return 'Mise à jour vérifiée.';
     });
     if(name==='repair'||name==='play')return exclusive(async()=>{
         const token=await packToken(),m=await updater.feed(config,token);
         progress({text:`Synchronisation AkuMa ${m.version}`,percent:0});
         const b2=token&&await api('/api/pack/token',{token});
         const result=await updater.sync(gameDirectory(),m,{...config,b2},progress);
+        await setAsideUnknownMods(m);
         const engine=await prism.ensureEngine(gameRoot(),progress);
         await prism.configure(gameRoot(),settings,m,gateCommand());
         if(name==='repair'){progress({text:`Version ${result.version} vérifiée`,percent:100});return result;}
@@ -135,3 +168,5 @@ else app.whenReady().then(async()=>{
     if(process.env.AKUMA_SCREENSHOT){try{win.show();win.restore();win.focus();await win.webContents.capturePage(undefined,{stayHidden:true}).then(img=>fs.writeFile(process.env.AKUMA_SCREENSHOT,img.toPNG()));}catch(e){console.error('Capture de test :',e.message);}finally{app.quit();}}
 });
 app.on('window-all-closed',()=>{if(!game)app.quit();});
+// A launcher update downloaded in the background installs once the launcher and the game are closed.
+app.on('will-quit',()=>{if(pendingUpdate&&!game&&!busy&&installedCopy()){runInstaller(pendingUpdate.target,false);pendingUpdate=null;}});
