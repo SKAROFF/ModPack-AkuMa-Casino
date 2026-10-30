@@ -19,7 +19,7 @@ async function publish(source,dest,settings,key) {
         }
     }
     await walk(source);
-    const manifest=validate({schema:1,version:settings.version,minecraft:'1.21.1',fabric:settings.fabric,created:new Date().toISOString(),files});
+    const manifest=validate({schema:1,version:settings.version,minecraft:'1.21.1',...(settings.neoforge?{neoforge:settings.neoforge}:{fabric:settings.fabric}),...(settings.options?{options:settings.options}:{}),created:new Date().toISOString(),files});
     const payload=Buffer.from(JSON.stringify(manifest));
     const envelope={payload:payload.toString('base64'),signature:crypto.sign(null,payload,key).toString('base64')};
     const versionDir=path.join(dest,'versions',manifest.version); await fs.mkdir(versionDir,{recursive:true});
@@ -49,8 +49,14 @@ async function b2Upload(dist,prefix,keyFile){
     // latest.json goes last so players never see a version whose objects are missing.
     for(const rel of [...files,'latest.json']){
         const name=prefix+rel;if(rel!=='latest.json'&&existing.has(name))continue;
-        const bytes=await fs.readFile(path.join(dist,rel)),up=await b2.call('b2_get_upload_url',{bucketId:b2.bucketId});
-        const res=await fetch(up.uploadUrl,{method:'POST',headers:{authorization:up.authorizationToken,'X-Bz-File-Name':encodeURIComponent(name),'Content-Type':rel.endsWith('.json')?'application/json':'application/octet-stream','X-Bz-Content-Sha1':crypto.createHash('sha1').update(bytes).digest('hex')},body:bytes});
+        const bytes=await fs.readFile(path.join(dist,rel));let res;
+        // B2 answers 503 when an upload pod is busy: the documented fix is a fresh upload URL.
+        for(let attempt=1;;attempt++){
+            const up=await b2.call('b2_get_upload_url',{bucketId:b2.bucketId});
+            res=await fetch(up.uploadUrl,{method:'POST',headers:{authorization:up.authorizationToken,'X-Bz-File-Name':encodeURIComponent(name),'Content-Type':rel.endsWith('.json')?'application/json':'application/octet-stream','X-Bz-Content-Sha1':crypto.createHash('sha1').update(bytes).digest('hex')},body:bytes}).catch(e=>({ok:false,status:e.message}));
+            if(res.ok||attempt===5||![408,429,500,503,'fetch failed'].includes(res.status))break;
+            await new Promise(r=>setTimeout(r,attempt*2000));
+        }
         if(!res.ok)throw Error(`Envoi de ${name} refusé : HTTP ${res.status}`);
         sent++;console.log(`Envoyé : ${name} (${bytes.length} octets)`);
     }

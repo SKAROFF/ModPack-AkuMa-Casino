@@ -55,15 +55,23 @@ async function configure(root,settings,manifest,prelaunch){
     await assertIdle(root);const instance=instanceDir(root);await fs.mkdir(gameDir(root),{recursive:true});
     const owner=path.join(instance,'.akuma-profile');
     if(await exists(path.join(instance,'instance.cfg'))&&!await exists(owner))throw Error('Un profil Prism non géré existe déjà sous ce nom.');
-    if(!/^\d+\.\d+\.\d+$/.test(manifest.fabric)||manifest.minecraft!=='1.21.1')throw Error('Versions du profil invalides');
+    const loader=manifest.neoforge?{uid:'net.neoforged',version:manifest.neoforge}:{uid:'net.fabricmc.fabric-loader',version:manifest.fabric};
+    if(!/^\d+\.\d+\.\d+(-beta)?$/.test(loader.version)||manifest.minecraft!=='1.21.1')throw Error('Versions du profil invalides');
     await fs.writeFile(owner,'Managed by AKUMA Launcher. Official Prism binary remains unmodified.\n');
-    const components=[{uid:'org.lwjgl3',version:'3.3.3',dependencyOnly:true},{uid:'net.minecraft',version:'1.21.1',important:true},{uid:'net.fabricmc.intermediary',version:'1.21.1',dependencyOnly:true},{uid:'net.fabricmc.fabric-loader',version:manifest.fabric}];
+    const components=[{uid:'org.lwjgl3',version:'3.3.3',dependencyOnly:true},{uid:'net.minecraft',version:'1.21.1',important:true},...(manifest.neoforge?[]:[{uid:'net.fabricmc.intermediary',version:'1.21.1',dependencyOnly:true}]),loader];
     await atomic(path.join(instance,'mmc-pack.json'),{formatVersion:1,components});
     const cfg={ConfigVersion:'1.3',InstanceType:'OneSix',name:'AKUMA — Royal Casino',iconKey:'default',OverrideMemory:true,MinMemAlloc:1024,MaxMemAlloc:settings.ram,OverrideWindow:true,MinecraftWinWidth:settings.width,MinecraftWinHeight:settings.height,LaunchMaximized:false,OverrideJavaLocation:false,AutomaticJava:true,OverrideMiscellaneous:true,CloseAfterLaunch:true,QuitAfterGameStop:true,OverrideConsole:true,ShowConsole:false,AutoCloseConsole:true,ShowConsoleOnError:true,OverrideCommands:true,PreLaunchCommand:prelaunch,PostExitCommand:'',WrapperCommand:'',UseAccountForInstance:false,JoinServerOnLaunch:false};
     await fs.writeFile(path.join(instance,'instance.cfg'),'[General]\n'+Object.entries(cfg).map(([k,v])=>`${k}=${typeof v==='string'?JSON.stringify(v):v}`).join('\n')+'\n');
     const options=path.join(gameDir(root),'options.txt');let text='';try{text=await fs.readFile(options,'utf8');}catch(e){if(e.code!=='ENOENT')throw e;}
     const line=`fullscreen:${settings.fullscreen?'true':'false'}`;
     text=/^fullscreen:.*$/m.test(text)?text.replace(/^fullscreen:.*$/m,line):text+(text&&!text.endsWith('\n')?'\n':'')+line+'\n';
+    if(!text.endsWith('\n'))text+='\n';
+    // Switch on the pack's resource packs without touching the player's other choices.
+    const packs=manifest.options?.resourcePacks||[];
+    if(packs.length){const current=/^resourcePacks:(\[.*\])$/m.exec(text);let list=[];try{list=current?JSON.parse(current[1]):[];}catch{}
+        for(const p of packs)if(!list.includes(p))list.push(p);
+        const packLine=`resourcePacks:${JSON.stringify(list)}`;text=current?text.replace(current[0],packLine):text+packLine+'\n';}
+    if(manifest.options?.lang&&!/^lang:/m.test(text))text+=`lang:${manifest.options.lang}\n`;
     await fs.writeFile(options,text);
     const global=path.join(dataDir(root),'prismlauncher.cfg');
     if(!await exists(global))await fs.writeFile(global,'[General]\nLanguage=fr\nAutomaticJavaSwitch=true\nAutomaticJavaDownload=true\nUserAskedAboutAutomaticJavaDownload=true\nCloseAfterLaunch=false\nQuitAfterGameStop=true\n');

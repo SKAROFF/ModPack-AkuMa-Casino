@@ -25,10 +25,10 @@ function allowedUrl(url,hosts,dev=false) {
     if(u.username || u.password || !(u.protocol==='https:' && hosts.includes(u.hostname)) && !(dev && u.protocol==='http:' && u.hostname==='127.0.0.1')) throw Error('Source de téléchargement interdite');
     return u;
 }
-async function response(url,hosts,dev,headers={}) {
+async function response(url,hosts,dev,headers={},timeout=60000) {
     for(let n=0;n<6;n++) {
         allowedUrl(url,hosts,dev);
-        const r=await fetch(url,{headers,redirect:'manual',signal:AbortSignal.timeout(60000)});
+        const r=await fetch(url,{headers,redirect:'manual',signal:AbortSignal.timeout(timeout)});
         if([301,302,303,307,308].includes(r.status)) { const next=new URL(r.headers.get('location'),url); if(next.host!==new URL(url).host) { const {Authorization,...rest}=headers; headers=rest; } url=next.href; continue; }
         if(r.status===401) throw Error('Connexion AkuMa requise : connecte-toi à ton compte AkuMa dans le launcher.');
         if(!r.ok) throw Error(`Distribution indisponible (HTTP ${r.status})`);
@@ -37,7 +37,10 @@ async function response(url,hosts,dev,headers={}) {
     throw Error('Trop de redirections');
 }
 function validate(m) {
-    if(m.schema!==1 || !/^\d+\.\d+\.\d+([-.][a-zA-Z0-9.]+)?$/.test(m.version) || m.minecraft!=='1.21.1' || !/^\d+\.\d+\.\d+$/.test(m.fabric) || !Array.isArray(m.files) || m.files.length>2000) throw Error('Manifeste incompatible');
+    // A pack runs either Fabric or NeoForge, never both.
+    const loader=m.neoforge!==undefined ? m.fabric===undefined && /^\d+\.\d+\.\d+(-beta)?$/.test(m.neoforge) : /^\d+\.\d+\.\d+$/.test(m.fabric);
+    if(m.schema!==1 || !/^\d+\.\d+\.\d+([-.][a-zA-Z0-9.]+)?$/.test(m.version) || m.minecraft!=='1.21.1' || !loader || !Array.isArray(m.files) || m.files.length>2000) throw Error('Manifeste incompatible');
+    if(m.options!==undefined && (typeof m.options!=='object' || !Array.isArray(m.options.resourcePacks) || m.options.resourcePacks.length>20 || !m.options.resourcePacks.every(p=>typeof p==='string' && /^(vanilla|mod_resources|file\/[^"\\\n\r]{1,120})$/.test(p)) || m.options.lang!==undefined && !/^[a-z]{2,3}_[a-z]{2,3}$/.test(m.options.lang))) throw Error('Options du pack invalides');
     const seen=new Set();
     for(const f of m.files) { safePath(f.path); const k=f.path.toLowerCase(); if(seen.has(k)) throw Error('Chemin dupliqué'); seen.add(k); if(!/^[a-f0-9]{64}$/.test(f.sha256) || !Number.isSafeInteger(f.size) || f.size<0 || f.size>2**31 || !['managed','preserve'].includes(f.policy)) throw Error('Fichier invalide'); }
     return m;
@@ -61,7 +64,8 @@ async function download(f,target,hosts,dev=false,auth=null) {
             let offset=await exists(target)?(await fs.stat(target)).size:0;
             if(offset===f.size && hash(await fs.readFile(target))===f.sha256) return;
             if(offset>=f.size) { await fs.writeFile(target,''); offset=0; }
-            const r=await response(f.url,hosts,dev,{...(offset?{Range:`bytes=${offset}-`}:{}),...(auth&&new URL(f.url).hostname===auth.host?{Authorization:auth.token}:{})});
+            // Large mods (Pixelmon is about 400 MB) need far more than a minute on slow connections.
+            const r=await response(f.url,hosts,dev,{...(offset?{Range:`bytes=${offset}-`}:{}),...(auth&&new URL(f.url).hostname===auth.host?{Authorization:auth.token}:{})},3600000);
             const append=offset>0 && r.status===206;
             if(append && !r.headers.get('content-range')?.startsWith(`bytes ${offset}-`)) throw Error('Reprise invalide');
             let received=append?offset:0;
