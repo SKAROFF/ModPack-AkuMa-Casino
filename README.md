@@ -10,7 +10,7 @@ La première fois, cliquer sur Compte Microsoft, terminer la configuration de Pr
 
 Prism peut afficher une demande de connexion ou de téléchargement. Un compte Minecraft Java valide et Internet sont nécessaires. Le launcher est une préversion sans signature Authenticode ; le démarrage authentifié complet reste à valider avec le joueur. Le portable est fourni pour les essais ; l’installateur NSIS est compilé mais son installation n’a pas été validée sur l’ordinateur de préparation.
 
-Serveur : `akuma-casino.mine.fun`. [Discord AkuMa](https://discord.gg/TNMHftawHw).
+Serveur : `akumon.mine.fun`. [Discord AkuMa](https://discord.gg/TNMHftawHw).
 
 ## Développement
 

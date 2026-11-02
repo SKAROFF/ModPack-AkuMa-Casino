@@ -7,5 +7,6 @@ for folder in ['desktop','tools','tests','docs','vendor-source','service']:
             target=dest/rel;target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(p,target)
 for name in ['package.json','pnpm-lock.yaml','electron-builder.akuma.yml','LICENSE.txt','README.md']:
     shutil.copy2(root/name,dest/name)
+(dest/'.github/workflows').mkdir(parents=True,exist_ok=True);shutil.copy2(root/'tools/mac-build.yml',dest/'.github/workflows/launcher-mac.yml')
 (dest/'.gitignore').write_text('node_modules/\ndist-akuma/\nprivate-admin/\nprivate-pack*/\nqa/\npublication/\nreports/\n*.pem\n',encoding='utf-8')
 print('Structure source préparée sans JAR du modpack, clés privées, cache, sessions ou rapports locaux.')

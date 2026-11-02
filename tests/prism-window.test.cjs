@@ -4,7 +4,7 @@ test('Account launch and reactivation never request a hidden Windows GUI',async(
     const root=await fs.mkdtemp(path.join(os.tmpdir(),'akuma-visible-')),original=cp.spawn,invocations=[];
     cp.spawn=(exe,args,options)=>{invocations.push({exe,args,options});const child=new EventEmitter();child.pid=process.pid;child.exitCode=null;child.unref=()=>{};process.nextTick(()=>child.emit('spawn'));return child;};
     try{
-        const child=await prism.start(root,'C:/Prism/prismlauncher.exe','akuma-casino.mine.fun',false);
+        const child=await prism.start(root,'C:/Prism/prismlauncher.exe','akumon.mine.fun',false);
         assert.equal(invocations[0].options.windowsHide,false);
         assert.equal((await prism.activeSession(root)).mode,'account');
         await prism.reopen(root,'C:/Prism/prismlauncher.exe');assert.equal(invocations[1].options.windowsHide,false);

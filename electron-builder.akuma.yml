@@ -20,6 +20,15 @@ win:
     - target: nsis
       arch: x64
   signAndEditExecutable: false
+mac:
+  target:
+    - target: dmg
+      arch: universal
+  artifactName: 'AKUMA-Launcher-Preview-${version}-macOS.${ext}'
+  category: public.app-category.games
+  # shortcut: ad-hoc signature, players must allow the app once in macOS settings; use an Apple Developer ID to remove that step.
+  identity: '-'
+  hardenedRuntime: false
 nsis:
   oneClick: false
   perMachine: false

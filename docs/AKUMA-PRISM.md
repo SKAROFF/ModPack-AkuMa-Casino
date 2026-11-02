@@ -8,9 +8,9 @@ La version 0.2.2 conserve l’interface Royal AkuMa et son système de mises à 
 2. Cliquer sur **Compte Microsoft**. Le paquet Windows portable officiel Prism 11.1.1 est inclus dans AkuMa et extrait automatiquement après vérification SHA-256. Aucun installateur Prism ni installation séparée n’est demandé.
 3. Terminer les éventuelles étapes de bienvenue de Prism. Dans **Paramètres → Comptes**, choisir **Ajouter Microsoft** et effectuer soi-même la connexion Microsoft.
 4. Fermer Prism, puis revenir dans AkuMa. AkuMa bloque les modifications tant que son processus Prism est ouvert, pour éviter d’écrire dans les mods pendant une partie.
-5. Lorsque le pack a été publié sur GitHub, cliquer sur **Jouer sur AkuMa**. AkuMa synchronise les fichiers, prépare le profil et demande à Prism de démarrer le jeu et de rejoindre `akuma-casino.mine.fun`.
+5. Lorsque le pack a été publié sur GitHub, cliquer sur **Jouer sur AkuMa**. AkuMa synchronise les fichiers, prépare le profil et demande à Prism de démarrer le jeu et de rejoindre `akumon.mine.fun`.
 
-Le bouton Jouer utilise `--launch akuma --server akuma-casino.mine.fun`, sans `--show-window` : le jeu démarre directement sans afficher l’accueil Prism. La console ordinaire est désactivée pour ce profil ; les erreurs restent visibles. Prism peut afficher les téléchargements, la première configuration ou une demande de connexion Microsoft. La fenêtre se ferme au démarrage du jeu et le processus se termine à la fin de la partie. Le bouton Déconnexion dans AkuMa ouvre la gestion du compte Prism : la suppression du compte se fait dans Prism. AkuMa n’affiche pas un nom de joueur supposé et ne lit pas le fichier de comptes de Prism.
+Le bouton Jouer utilise `--launch akuma --server akumon.mine.fun`, sans `--show-window` : le jeu démarre directement sans afficher l’accueil Prism. La console ordinaire est désactivée pour ce profil ; les erreurs restent visibles. Prism peut afficher les téléchargements, la première configuration ou une demande de connexion Microsoft. La fenêtre se ferme au démarrage du jeu et le processus se termine à la fin de la partie. Le bouton Déconnexion dans AkuMa ouvre la gestion du compte Prism : la suppression du compte se fait dans Prism. AkuMa n’affiche pas un nom de joueur supposé et ne lit pas le fichier de comptes de Prism.
 
 ## Isolation des données
 

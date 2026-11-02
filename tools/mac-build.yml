@@ -1,0 +1,33 @@
+# Copied to .github/workflows/launcher-mac.yml by tools/prepare-github-source.py.
+name: Launcher macOS
+on:
+  workflow_dispatch:
+  push:
+    branches: ['mac-*']
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: pnpm install --frozen-lockfile
+      - run: node tools/prepare-bundled-engine.cjs
+      - run: node --test tests/*.test.cjs
+      - run: pnpm exec electron-builder --config electron-builder.akuma.yml --mac --publish never
+      - name: The packaged launcher starts and its pre-launch gate refuses a missing pack
+        run: |
+          set +e
+          out=$("dist-akuma/mac-universal/AKUMA Launcher.app/Contents/MacOS/AKUMA Launcher" --akuma-prelaunch "$RUNNER_TEMP/no-pack" 2>&1)
+          code=$?
+          echo "$out"
+          [ "$code" = 1 ] && echo "$out" | grep -q "AkuMa :"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: launcher-macos
+          path: dist-akuma/*.dmg
+          compression-level: 0

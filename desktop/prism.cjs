@@ -1,7 +1,9 @@
 const fs=require('node:fs/promises'),path=require('node:path'),cp=require('node:child_process');
 const AdmZip=require('adm-zip');
 const {hash,download,atomic}=require('./updater.cjs');
-const RELEASE={version:'11.1.1',url:'https://github.com/PrismLauncher/PrismLauncher/releases/download/11.1.1/PrismLauncher-Windows-MinGW-w64-Portable-11.1.1.zip',sha256:'05841d0b3bfc0a8212658457cc6035e1c29cd7ffae919464e874e384cbe8d062',size:43687692};
+const mac=process.platform==='darwin';
+const RELEASE=mac?{version:'11.1.1',url:'https://github.com/PrismLauncher/PrismLauncher/releases/download/11.1.1/PrismLauncher-macOS-11.1.1.zip',sha256:'15126a7df57acb4f37fe581dad68cb03c7bb60b70eb82345f8bb3246235600c6',size:43614882}:{version:'11.1.1',url:'https://github.com/PrismLauncher/PrismLauncher/releases/download/11.1.1/PrismLauncher-Windows-MinGW-w64-Portable-11.1.1.zip',sha256:'05841d0b3bfc0a8212658457cc6035e1c29cd7ffae919464e874e384cbe8d062',size:43687692};
+const EXE=mac?'Prism Launcher.app/Contents/MacOS/prismlauncher':'prismlauncher.exe';
 const hosts=['github.com','release-assets.githubusercontent.com'];
 const dataDir=root=>path.join(root,'prism');
 const instanceDir=root=>path.join(dataDir(root),'instances','akuma');
@@ -22,14 +24,14 @@ function archivePath(name){
     return name;
 }
 async function ensureEngine(root,onProgress=()=>{},bundledDirectory=process.resourcesPath){
-    const target=path.join(root,'prism-engine',RELEASE.version),exe=path.join(target,'prismlauncher.exe');
+    const target=path.join(root,'prism-engine',RELEASE.version),exe=path.join(target,EXE);
     if(await exists(exe)){
         const receipt=JSON.parse(await fs.readFile(path.join(target,'akuma-integrity.json'),'utf8'));
         if(receipt.archive!==RELEASE.sha256)throw Error('Version du moteur Prism non reconnue');
         for(const f of receipt.files){archivePath(f.path);if(hash(await fs.readFile(path.join(target,f.path)))!==f.sha256)throw Error('Un fichier Prism est corrompu. Renommez le dossier prism-engine pour le réinstaller.');}
         return exe;
     }
-    if(process.platform!=='win32'||process.arch!=='x64')throw Error('Cette préversion est prévue pour Windows x64.');
+    if(!mac&&(process.platform!=='win32'||process.arch!=='x64'))throw Error('Cette préversion est prévue pour Windows x64 et macOS.');
     onProgress({text:'Préparation du composant Minecraft intégré à AkuMa',percent:0});
     const zipPath=path.join(root,'downloads',`Prism-${RELEASE.version}.zip`);
     const bundled=bundledDirectory&&path.join(bundledDirectory,`Prism-${RELEASE.version}.zip`);
@@ -38,15 +40,21 @@ async function ensureEngine(root,onProgress=()=>{},bundledDirectory=process.reso
         if(bytes.length!==RELEASE.size||hash(bytes)!==RELEASE.sha256)throw Error('Composant Prism intégré corrompu : réinstallez AkuMa.');
         await fs.mkdir(path.dirname(zipPath),{recursive:true});await fs.writeFile(zipPath,bytes);
     }else await download(RELEASE,zipPath,hosts);
-    const zip=new AdmZip(zipPath),staging=target+'.staging-'+process.pid,files=[];await fs.mkdir(staging,{recursive:true});
-    let total=0;
-    for(const entry of zip.getEntries()){
-        archivePath(entry.entryName);if(entry.isDirectory)continue;
-        if((entry.attr>>>16&0xf000)===0xa000)throw Error('Archive Prism : lien interdit');
-        total+=entry.header.size;if(total>500e6||entry.header.size>150e6)throw Error('Archive Prism trop volumineuse');
-        const bytes=entry.getData(),dest=path.join(staging,entry.entryName);await fs.mkdir(path.dirname(dest),{recursive:true});await fs.writeFile(dest,bytes);files.push({path:entry.entryName,sha256:hash(bytes)});
+    const staging=target+'.staging-'+process.pid,files=[];await fs.mkdir(staging,{recursive:true});
+    if(mac){
+        // The app bundle needs its framework symlinks and executable bits, which AdmZip drops; the archive's SHA-256 is pinned above.
+        await new Promise((resolve,reject)=>cp.execFile('ditto',['-x','-k',zipPath,staging],e=>e?reject(Error('Archive Prism illisible')):resolve()));
+        for(const e of await fs.readdir(staging,{withFileTypes:true,recursive:true}))if(e.isFile()){const p=path.join(e.parentPath,e.name);files.push({path:path.relative(staging,p),sha256:hash(await fs.readFile(p))});}
+    }else{
+        const zip=new AdmZip(zipPath);let total=0;
+        for(const entry of zip.getEntries()){
+            archivePath(entry.entryName);if(entry.isDirectory)continue;
+            if((entry.attr>>>16&0xf000)===0xa000)throw Error('Archive Prism : lien interdit');
+            total+=entry.header.size;if(total>500e6||entry.header.size>150e6)throw Error('Archive Prism trop volumineuse');
+            const bytes=entry.getData(),dest=path.join(staging,entry.entryName);await fs.mkdir(path.dirname(dest),{recursive:true});await fs.writeFile(dest,bytes);files.push({path:entry.entryName,sha256:hash(bytes)});
+        }
     }
-    if(!await exists(path.join(staging,'prismlauncher.exe')))throw Error('Exécutable Prism absent');
+    if(!await exists(path.join(staging,EXE)))throw Error('Exécutable Prism absent');
     await atomic(path.join(staging,'akuma-integrity.json'),{archive:RELEASE.sha256,files});
     await fs.mkdir(path.dirname(target),{recursive:true});await fs.rename(staging,target);
     return exe;

@@ -46,15 +46,15 @@ async function launcherManifest(){
     const crypto=require('node:crypto'),r=await updater.response(config.launcherFeedUrl,config.allowedHosts),e=await r.json(),bytes=Buffer.from(e.payload,'base64');
     if(!crypto.verify(null,bytes,config.publicKey,Buffer.from(e.signature,'base64')))throw Error('Signature du launcher invalide');
     const m=JSON.parse(bytes),semver=require('semver');
-    if(m.appId!=='fr.akuma.launcher'||!semver.valid(m.version)||!semver.gt(m.version,app.getVersion())||!/^https:\/\/.+\.exe$/.test(m.url)||!Number.isSafeInteger(m.size)||m.size<1||m.size>500e6||!/^\w{64}$/.test(m.sha256))throw Error('Aucune nouvelle version valide du launcher.');
-    return m;
+    if(m.appId!=='fr.akuma.launcher'||!semver.valid(m.version)||!semver.gt(m.version,app.getVersion()))throw Error('Aucune nouvelle version valide du launcher.');
+    return updater.launcherFile(m);
 }
 // The NSIS installer leaves its uninstaller next to the exe; a portable copy has none.
 const installedCopy=()=>app.isPackaged&&require('node:fs').existsSync(path.join(path.dirname(process.execPath),'Uninstall AKUMA Launcher.exe'));
 const installedLauncher=()=>path.join(process.env.LOCALAPPDATA||'','Programs','AKUMA Launcher','AKUMA Launcher.exe');
 let pendingUpdate=null;
 async function prepareUpdate(){
-    const m=await launcherManifest(),target=path.join(root,'updates',`AKUMA-${m.version}.exe`);
+    const m=await launcherManifest(),target=path.join(root,'updates',`AKUMA-${m.version}.${m.ext}`);
     await updater.download(m,target,config.allowedHosts);
     return pendingUpdate={version:m.version,target};
 }
@@ -65,7 +65,7 @@ function runInstaller(target,relaunch){
 async function cleanUpdates(){
     const semver=require('semver'),dir=path.join(root,'updates');
     for(const name of await fs.readdir(dir).catch(()=>[])){
-        const v=/^AKUMA-(.+)\.exe$/.exec(name)?.[1];
+        const v=/^AKUMA-(.+)\.(?:exe|dmg)$/.exec(name)?.[1];
         if(v&&semver.valid(v)&&semver.lte(v,app.getVersion()))await fs.rm(path.join(dir,name),{force:true});
     }
 }

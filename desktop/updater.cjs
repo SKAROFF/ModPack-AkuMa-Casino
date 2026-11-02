@@ -175,4 +175,10 @@ async function unknownMods(root,manifest,kept=new Set()) {
     const entries=await fs.readdir(path.join(root,'mods'),{withFileTypes:true}).catch(e=>{if(e.code==='ENOENT')return [];throw e;});
     return entries.filter(e=>e.isFile() && /\.jar$/i.test(e.name) && !known.has(`mods/${e.name}`.toLowerCase()) && !kept.has(e.name)).map(e=>e.name);
 }
-module.exports={unknownMods,hash,safePath,allowedUrl,validate,verifyEnvelope,feed,sync,rollback,download,response,atomic,recoverInstallation};
+// Windows launchers read the manifest's top-level file, so the Mac build gets its own entry beside it.
+function launcherFile(m,platform=process.platform){
+    const f=platform==='darwin'?m.mac:m,ext=platform==='darwin'?'dmg':'exe';
+    if(!f||typeof f.url!=='string'||!f.url.startsWith('https://')||!f.url.endsWith('.'+ext)||!Number.isSafeInteger(f.size)||f.size<1||f.size>500e6||!/^\w{64}$/.test(f.sha256))throw Error('Aucune nouvelle version valide du launcher.');
+    return {version:m.version,url:f.url,size:f.size,sha256:f.sha256,ext};
+}
+module.exports={launcherFile,unknownMods,hash,safePath,allowedUrl,validate,verifyEnvelope,feed,sync,rollback,download,response,atomic,recoverInstallation};
