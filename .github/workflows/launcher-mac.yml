@@ -15,7 +15,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: pnpm install --frozen-lockfile
+      # electron-winstaller only builds Windows installers; its skipped script is not needed here.
+      - run: pnpm install --frozen-lockfile --config.strict-dep-builds=false
       - run: node tools/prepare-bundled-engine.cjs
       - run: node --test tests/*.test.cjs
       - run: pnpm exec electron-builder --config electron-builder.akuma.yml --mac --publish never
