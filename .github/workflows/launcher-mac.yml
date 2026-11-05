@@ -19,7 +19,7 @@ jobs:
       - run: pnpm install --frozen-lockfile --config.strict-dep-builds=false
       - run: node tools/prepare-bundled-engine.cjs
       - run: node --test tests/*.test.cjs
-      - run: pnpm exec electron-builder --config electron-builder.akuma.yml --mac --publish never
+      - run: ./node_modules/.bin/electron-builder --config electron-builder.akuma.yml --mac --publish never
       - name: The packaged launcher starts and its pre-launch gate refuses a missing pack
         run: |
           set +e
