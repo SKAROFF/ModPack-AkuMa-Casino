@@ -145,6 +145,7 @@ async function operation(name,args){
         // Quick join only saves a hidden entry, so the visible list needs the server for reconnecting. An unreadable list must not stop the game.
         await require('./servers.cjs').ensure(path.join(gameDirectory(),'servers.dat'),{address:config.serverAddress,name:config.serverName,retired:config.retiredServers}).catch(e=>console.error('Liste des serveurs :',e.message));
         if(name==='repair'){progress({text:`Version ${result.version} vérifiée`,percent:100});return result;}
+        if(token)await prism.assertAccount(gameRoot(),await require('./prism-gate.cjs').akumaPseudo(config,token));
         game=await prism.start(gameRoot(),exe,config.serverAddress,true,()=>{game=null;progress({text:'Session Prism terminée',percent:0});if(BrowserWindow.getAllWindows().length===0)app.quit();});
         progress({text:'Démarrage de Minecraft — vérification du compte Microsoft',percent:100});return result;
     });

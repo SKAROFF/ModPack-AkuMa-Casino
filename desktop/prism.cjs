@@ -88,6 +88,13 @@ async function configure(root,settings,manifest,prelaunch){
     const global=path.join(dataDir(root),'prismlauncher.cfg');
     if(!await exists(global))await fs.writeFile(global,'[General]\nLanguage=fr\nAutomaticJavaSwitch=true\nAutomaticJavaDownload=true\nUserAskedAboutAutomaticJavaDownload=true\nCloseAfterLaunch=false\nQuitAfterGameStop=true\n');
 }
+// Instances never pin an account, so Prism plays with its default one: the entry marked active in accounts.json.
+async function assertAccount(root,pseudo){
+    let data;try{data=JSON.parse(await fs.readFile(path.join(dataDir(root),'accounts.json'),'utf8'));}catch(e){if(e.code!=='ENOENT')throw Error('Comptes Prism illisibles.');}
+    const name=(Array.isArray(data?.accounts)?data.accounts:[]).find(a=>a?.active===true)?.profile?.name;
+    if(typeof name!=='string'||!name)throw Error('Aucun compte Minecraft par défaut dans Prism : clique sur Compte Microsoft et choisis ton compte par défaut.');
+    if(name.toLowerCase()!==pseudo.toLowerCase())throw Error(`Le compte Minecraft de Prism (${name}) n’est pas celui de ton compte AkuMa (${pseudo}). Dans Prism, mets ${pseudo} comme compte par défaut, ou connecte-toi au compte AkuMa ${name}.`);
+}
 function args(root,server,play){const a=['--dir',dataDir(root)];if(play){if(!/^[A-Za-z0-9._-]+(?::\d{1,5})?$/.test(server))throw Error('Adresse de serveur invalide');a.push('--launch','akuma','--server',server);}return a;}
 async function start(root,exe,server,play,onClose=()=>{}){
     await assertIdle(root);
@@ -98,4 +105,4 @@ async function start(root,exe,server,play,onClose=()=>{}){
     if(child.exitCode!==null)throw Error('Prism s’est fermé pendant son démarrage.');
     return child;
 }
-module.exports={PRISM,RELEASE,dataDir,instanceDir,gameDir,assertIdle,activeSession,reopen,archivePath,ensureEngine,configure,args,start};
+module.exports={assertAccount,PRISM,RELEASE,dataDir,instanceDir,gameDir,assertIdle,activeSession,reopen,archivePath,ensureEngine,configure,args,start};
