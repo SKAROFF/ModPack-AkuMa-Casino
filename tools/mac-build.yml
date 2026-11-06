@@ -8,17 +8,18 @@ permissions:
   contents: read
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-15-intel
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: pnpm install --frozen-lockfile
+      # electron-winstaller only builds Windows installers; its skipped script is not needed here.
+      - run: pnpm install --frozen-lockfile --config.strict-dep-builds=false
       - run: node tools/prepare-bundled-engine.cjs
       - run: node --test tests/*.test.cjs
-      - run: pnpm exec electron-builder --config electron-builder.akuma.yml --mac --publish never
+      - run: ./node_modules/.bin/electron-builder --config electron-builder.akuma.yml --mac --publish never
       - name: The packaged launcher starts and its pre-launch gate refuses a missing pack
         run: |
           set +e

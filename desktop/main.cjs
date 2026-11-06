@@ -28,17 +28,19 @@ async function packToken(){
 const maxRam=()=>Math.max(1024,Math.floor((os.totalmem()/1024**2-2048)/512)*512);
 const progress=p=>{if(win&&!win.isDestroyed())win.webContents.send('progress',p);};
 const gameRoot=()=>settings.installDirectory||root;
+const prismVersion=()=>prism.PRISM[settings.prism]?settings.prism:prism.RELEASE.version;
+const engine=()=>prism.ensureEngine(gameRoot(),progress,process.resourcesPath,prismVersion());
 const gameDirectory=()=>prism.gameDir(gameRoot());
 const quote=value=>'"'+value.replaceAll('\\','/').replaceAll('"','')+'"';
 function gateCommand(){return [quote(process.execPath),...(app.isPackaged?[]:[quote(app.getAppPath())]),'--akuma-prelaunch',quote(gameDirectory())].join(' ');}
 async function read(p,fallback){try{return JSON.parse(await fs.readFile(p,'utf8'));}catch(e){if(e.code==='ENOENT')return fallback;throw e;}}
 async function exclusive(fn){if(busy||game)throw Error('Fermez Prism AkuMa et Minecraft avant cette opération.');busy=true;try{await prism.assertIdle(gameRoot());return await fn();}finally{busy=false;}}
-function state(){return {settings,maxRam:maxRam(),accounts:!!config.accountUrl,authProvider:'prism',account:'Géré dans Prism officiel',configured:!!(config.feedUrl&&config.publicKey&&config.serverAddress),news:config.news,version:app.getVersion()};}
+function state(){return {settings,maxRam:maxRam(),accounts:!!config.accountUrl,authProvider:'prism',account:'Géré dans Prism officiel',configured:!!(config.feedUrl&&config.publicKey&&config.serverAddress),news:config.news,version:app.getVersion(),prism:prismVersion(),prismVersions:Object.keys(prism.PRISM)};}
 async function openPrismAccount(){
-    const engine=await prism.ensureEngine(gameRoot(),progress);
+    const exe=await engine();
     const installed=await read(path.join(gameDirectory(),'.akuma','state.json'),{minecraft:'1.21.1',fabric:'0.19.5'});
     await prism.configure(gameRoot(),settings,installed,gateCommand());
-    game=await prism.start(gameRoot(),engine,config.serverAddress,false,()=>{game=null;progress({text:'Prism fermé. Vous pouvez revenir dans AkuMa pour jouer.',percent:0});if(BrowserWindow.getAllWindows().length===0)app.quit();});
+    game=await prism.start(gameRoot(),exe,config.serverAddress,false,()=>{game=null;progress({text:'Prism fermé. Vous pouvez revenir dans AkuMa pour jouer.',percent:0});if(BrowserWindow.getAllWindows().length===0)app.quit();});
     return 'Dans Prism : Paramètres → Comptes → Ajouter Microsoft. Pour déconnecter un compte, supprimez-le dans cette même page. Fermez ensuite Prism et revenez dans AkuMa.';
 }
 async function launcherManifest(){
@@ -94,7 +96,7 @@ async function operation(name,args){
     if(name==='login'||name==='logout'){
         const active=await prism.activeSession(gameRoot());
         if(active?.mode==='account'){
-            await prism.reopen(gameRoot(),await prism.ensureEngine(gameRoot(),progress));
+            await prism.reopen(gameRoot(),await engine());
             return 'Prism est déjà ouvert. Sa fenêtre a été rappelée ; terminez la connexion dans Prism.';
         }
         return exclusive(openPrismAccount);
@@ -104,6 +106,7 @@ async function operation(name,args){
         if(!Number.isInteger(s.ram)||s.ram<1024||s.ram>maxRam()||!Number.isInteger(s.width)||s.width<640||s.width>7680||!Number.isInteger(s.height)||s.height<480||s.height>4320||typeof s.fullscreen!=='boolean')throw Error('Paramètres incompatibles avec cette machine.');
         settings={...settings,ram:s.ram,width:s.width,height:s.height,fullscreen:s.fullscreen};await updater.atomic(path.join(root,'settings.json'),settings);return state();
     });
+    if(name==='prismVersion')return exclusive(async()=>{if(!prism.PRISM[args])throw Error('Version de Prism inconnue');settings={...settings,prism:args};await updater.atomic(path.join(root,'settings.json'),settings);return state();});
     if(name==='chooseFolder')return exclusive(async()=>{const result=await dialog.showOpenDialog(win,{properties:['openDirectory','createDirectory'],title:'Choisir le dossier parent de Minecraft AkuMa'});if(!result.canceled){settings.installDirectory=path.join(result.filePaths[0],'AkuMaMinecraft');await updater.atomic(path.join(root,'settings.json'),settings);}return state();});
     if(name==='folder'){await fs.mkdir(gameDirectory(),{recursive:true});await shell.openPath(gameDirectory());return;}
     if(name==='discord'){if(!/^https:\/\/(discord\.gg|discord\.com)\//.test(config.discordUrl))throw Error('Lien Discord à configurer');await shell.openExternal(config.discordUrl);return;}
@@ -137,12 +140,12 @@ async function operation(name,args){
         const b2=token&&await api('/api/pack/token',{token});
         const result=await updater.sync(gameDirectory(),m,{...config,b2},progress);
         await setAsideUnknownMods(m);
-        const engine=await prism.ensureEngine(gameRoot(),progress);
+        const exe=await engine();
         await prism.configure(gameRoot(),settings,m,gateCommand());
         // Quick join only saves a hidden entry, so the visible list needs the server for reconnecting. An unreadable list must not stop the game.
         await require('./servers.cjs').ensure(path.join(gameDirectory(),'servers.dat'),{address:config.serverAddress,name:config.serverName,retired:config.retiredServers}).catch(e=>console.error('Liste des serveurs :',e.message));
         if(name==='repair'){progress({text:`Version ${result.version} vérifiée`,percent:100});return result;}
-        game=await prism.start(gameRoot(),engine,config.serverAddress,true,()=>{game=null;progress({text:'Session Prism terminée',percent:0});if(BrowserWindow.getAllWindows().length===0)app.quit();});
+        game=await prism.start(gameRoot(),exe,config.serverAddress,true,()=>{game=null;progress({text:'Session Prism terminée',percent:0});if(BrowserWindow.getAllWindows().length===0)app.quit();});
         progress({text:'Démarrage de Minecraft — vérification du compte Microsoft',percent:100});return result;
     });
     throw Error('Action inconnue');

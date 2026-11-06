@@ -2,7 +2,10 @@ const fs=require('node:fs/promises'),path=require('node:path'),cp=require('node:
 const AdmZip=require('adm-zip');
 const {hash,download,atomic}=require('./updater.cjs');
 const mac=process.platform==='darwin';
-const RELEASE=mac?{version:'11.1.1',url:'https://github.com/PrismLauncher/PrismLauncher/releases/download/11.1.1/PrismLauncher-macOS-11.1.1.zip',sha256:'15126a7df57acb4f37fe581dad68cb03c7bb60b70eb82345f8bb3246235600c6',size:43614882}:{version:'11.1.1',url:'https://github.com/PrismLauncher/PrismLauncher/releases/download/11.1.1/PrismLauncher-Windows-MinGW-w64-Portable-11.1.1.zip',sha256:'05841d0b3bfc0a8212658457cc6035e1c29cd7ffae919464e874e384cbe8d062',size:43687692};
+// Players can pick Prism 9.4 when 11.1.1 fails on their PC; 11.1.1 stays the default and the only one bundled.
+const PRISM={'11.1.1':{win32:{version:'11.1.1',url:'https://github.com/PrismLauncher/PrismLauncher/releases/download/11.1.1/PrismLauncher-Windows-MinGW-w64-Portable-11.1.1.zip',sha256:'05841d0b3bfc0a8212658457cc6035e1c29cd7ffae919464e874e384cbe8d062',size:43687692},darwin:{version:'11.1.1',url:'https://github.com/PrismLauncher/PrismLauncher/releases/download/11.1.1/PrismLauncher-macOS-11.1.1.zip',sha256:'15126a7df57acb4f37fe581dad68cb03c7bb60b70eb82345f8bb3246235600c6',size:43614882}},
+    '9.4':{win32:{version:'9.4',url:'https://github.com/PrismLauncher/PrismLauncher/releases/download/9.4/PrismLauncher-Windows-MinGW-w64-Portable-9.4.zip',sha256:'cd900dfc92e9489d19e3262e6c61556a7709aeccb5aaccfc576e85b0df1c3c4d',size:40284625},darwin:{version:'9.4',url:'https://github.com/PrismLauncher/PrismLauncher/releases/download/9.4/PrismLauncher-macOS-9.4.zip',sha256:'5cc0148e427d28c632978a9e83e2da3fc02f5072990d9e7732dff3fdb1912ae4',size:37236128}}};
+const RELEASE=PRISM['11.1.1'][mac?'darwin':'win32'];
 const EXE=mac?'Prism Launcher.app/Contents/MacOS/prismlauncher':'prismlauncher.exe';
 const hosts=['github.com','release-assets.githubusercontent.com'];
 const dataDir=root=>path.join(root,'prism');
@@ -23,23 +26,24 @@ function archivePath(name){
     if(!name || name.startsWith('/') || name.includes('\\') || name.split('/').some(s=>s==='..'||s==='.'||/[\x00-\x1f:<>"|?*]/.test(s)))throw Error('Archive Prism : chemin interdit');
     return name;
 }
-async function ensureEngine(root,onProgress=()=>{},bundledDirectory=process.resourcesPath){
-    const target=path.join(root,'prism-engine',RELEASE.version),exe=path.join(target,EXE);
+async function ensureEngine(root,onProgress=()=>{},bundledDirectory=process.resourcesPath,version=RELEASE.version){
+    const release=PRISM[version]?.[mac?'darwin':'win32'];if(!release)throw Error('Version de Prism inconnue');
+    const target=path.join(root,'prism-engine',release.version),exe=path.join(target,EXE);
     if(await exists(exe)){
         const receipt=JSON.parse(await fs.readFile(path.join(target,'akuma-integrity.json'),'utf8'));
-        if(receipt.archive!==RELEASE.sha256)throw Error('Version du moteur Prism non reconnue');
+        if(receipt.archive!==release.sha256)throw Error('Version du moteur Prism non reconnue');
         for(const f of receipt.files){archivePath(f.path);if(hash(await fs.readFile(path.join(target,f.path)))!==f.sha256)throw Error('Un fichier Prism est corrompu. Renommez le dossier prism-engine pour le réinstaller.');}
         return exe;
     }
     if(!mac&&(process.platform!=='win32'||process.arch!=='x64'))throw Error('Cette préversion est prévue pour Windows x64 et macOS.');
     onProgress({text:'Préparation du composant Minecraft intégré à AkuMa',percent:0});
-    const zipPath=path.join(root,'downloads',`Prism-${RELEASE.version}.zip`);
-    const bundled=bundledDirectory&&path.join(bundledDirectory,`Prism-${RELEASE.version}.zip`);
+    const zipPath=path.join(root,'downloads',`Prism-${release.version}.zip`);
+    const bundled=bundledDirectory&&path.join(bundledDirectory,`Prism-${release.version}.zip`);
     if(bundled&&await exists(bundled)){
         const bytes=await fs.readFile(bundled);
-        if(bytes.length!==RELEASE.size||hash(bytes)!==RELEASE.sha256)throw Error('Composant Prism intégré corrompu : réinstallez AkuMa.');
+        if(bytes.length!==release.size||hash(bytes)!==release.sha256)throw Error('Composant Prism intégré corrompu : réinstallez AkuMa.');
         await fs.mkdir(path.dirname(zipPath),{recursive:true});await fs.writeFile(zipPath,bytes);
-    }else await download(RELEASE,zipPath,hosts);
+    }else await download(release,zipPath,hosts);
     const staging=target+'.staging-'+process.pid,files=[];await fs.mkdir(staging,{recursive:true});
     if(mac){
         // The app bundle needs its framework symlinks and executable bits, which AdmZip drops; the archive's SHA-256 is pinned above.
@@ -55,7 +59,7 @@ async function ensureEngine(root,onProgress=()=>{},bundledDirectory=process.reso
         }
     }
     if(!await exists(path.join(staging,EXE)))throw Error('Exécutable Prism absent');
-    await atomic(path.join(staging,'akuma-integrity.json'),{archive:RELEASE.sha256,files});
+    await atomic(path.join(staging,'akuma-integrity.json'),{archive:release.sha256,files});
     await fs.mkdir(path.dirname(target),{recursive:true});await fs.rename(staging,target);
     return exe;
 }
@@ -94,4 +98,4 @@ async function start(root,exe,server,play,onClose=()=>{}){
     if(child.exitCode!==null)throw Error('Prism s’est fermé pendant son démarrage.');
     return child;
 }
-module.exports={RELEASE,dataDir,instanceDir,gameDir,assertIdle,activeSession,reopen,archivePath,ensureEngine,configure,args,start};
+module.exports={PRISM,RELEASE,dataDir,instanceDir,gameDir,assertIdle,activeSession,reopen,archivePath,ensureEngine,configure,args,start};
