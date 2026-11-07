@@ -22,3 +22,22 @@ Pour signer la prochaine mise à jour du programme, utiliser la commande launche
 La réparation du pack se fait dans AkuMa ; la réparation des fichiers Minecraft/Java se fait dans Prism. Un lancement direct du profil via Prism vérifie le pack mais ne le synchronise pas : s’il est dépassé ou corrompu, fermer Prism puis utiliser AkuMa.
 
 Aucune modification n’a été déployée sur le serveur Minestrator. Les tests finaux de connexion, protocoles des mods, resource pack et bibliothèques MCEF doivent encore être effectués avec un compte Java valide. Aucun abonnement supplémentaire d’hébergement n’est requis pour utiliser les GitHub Releases préparées ; les conditions GitHub restent applicables.
+
+## Publier une nouvelle version du pack (n'importe quel admin)
+
+Les sources du pack ne sont pas dans git : le pack publié sert de source. Il faut la clé de signature (`private-admin/keys/private.pem`) et une clé Backblaze limitée au bucket (`~/.b2/publication-akuma.txt`, ou `AKUMA_B2_KEY_FILE`).
+
+1. Récupérer la version en ligne, dans un dossier vide hors du dépôt (lecture seule du bucket ; signature vérifiée) :
+
+       node tools/publish.cjs pull ../pack-work private-admin/keys/private.pem 2.0.25-alpha
+
+   On obtient `../pack-work/source/` (les fichiers des joueurs), `../pack-work/config.json` (réglages et droits, avec la nouvelle version) et `../pack-work/publie-<ancienne>.json` (le manifeste qui était en ligne).
+2. Remplacer ou ajouter les fichiers dans `source/` (par exemple `mods/kanto-adventure-1.21.1-1.0.0.jar`). Un fichier nouveau doit recevoir sa ligne dans `config.json > rights` (mode, preuve, licence), sinon `build` refuse.
+3. Construire et signer :
+
+       node tools/publish.cjs build ../pack-work/source ../pack-work/dist ../pack-work/config.json private-admin/keys/private.pem
+
+4. Publier (les objets d'abord, `latest.json` en dernier) : `node tools/publish.cjs upload ../pack-work/dist`.
+5. Retour arrière : `pull` d'avant reste disponible (`publie-<ancienne>.json`) ; republier l'ancienne version avec `rollback` puis `upload`.
+
+Contrôle fait le 07/11/2026 : `pull` puis `build` de la 2.0.24-alpha redonne le manifeste publié à l'identique (93 fichiers), hors date de création.

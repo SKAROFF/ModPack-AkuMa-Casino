@@ -1,5 +1,5 @@
 const fs=require('node:fs/promises'),path=require('node:path'),crypto=require('node:crypto');
-const {hash,validate,safePath,atomic}=require('../desktop/updater.cjs');
+const {hash,validate,safePath,atomic,verifyEnvelope}=require('../desktop/updater.cjs');
 async function publish(source,dest,settings,key) {
     const files=[];
     async function walk(dir,rel='') {
@@ -36,7 +36,33 @@ async function b2Auth(keyFile){
     const a=await r.json(),s=a.apiInfo.storageApi;
     if(!s.bucketId)throw Error('La clé B2 doit être limitée au bucket du modpack');
     const call=async(name,body)=>{const res=await fetch(`${s.apiUrl}/b2api/v3/${name}`,{method:'POST',headers:{authorization:a.authorizationToken},body:JSON.stringify(body)});if(!res.ok)throw Error(`B2 ${name} : HTTP ${res.status} ${await res.text()}`);return res.json();};
-    return {bucketId:s.bucketId,bucketName:s.bucketName,call};
+    const download=async name=>{const res=await fetch(`${s.downloadUrl}/file/${s.bucketName}/${name}`,{headers:{authorization:a.authorizationToken}});if(!res.ok)throw Error(`Téléchargement de ${name} refusé : HTTP ${res.status}`);return Buffer.from(await res.arrayBuffer());};
+    return {bucketId:s.bucketId,bucketName:s.bucketName,call,download};
+}
+// The published pack is its own source: the signed manifest names every file, its rights and the pack settings.
+// Rebuilds SORTIE/source (the files) and SORTIE/config.json (what `build` reads), so any admin can make the next version.
+// Only reads the bucket. The signature is checked with the public half of the signing key.
+async function b2Pull(out,keyFile,key,nextVersion){
+    const b2=await b2Auth(keyFile);
+    const manifest=verifyEnvelope(JSON.parse(await b2.download('latest.json')),crypto.createPublicKey(key));
+    const source=path.join(out,'source'),rights={};let baseUrl=null,assetLayout;
+    for(const f of manifest.files){
+        safePath(f.path);
+        const own=f.url.endsWith(f.sha256);  // redistributed: stored in the bucket under its hash; otherwise an authorized external URL
+        if(own){const prefix=f.url.slice(0,-f.sha256.length),layout=prefix.endsWith('/objects/')?undefined:'github-release',base=layout?prefix:prefix.slice(0,-'objects/'.length);
+            if(baseUrl!==null&&(base!==baseUrl||layout!==assetLayout))throw Error('Adresses d’objets incohérentes dans le manifeste');baseUrl=base;assetLayout=layout;}
+        let bytes=own?await b2.download(`objects/${f.sha256}`):null;
+        if(!own){const res=await fetch(f.url);if(!res.ok)throw Error(`Téléchargement refusé : ${f.url} (HTTP ${res.status})`);bytes=Buffer.from(await res.arrayBuffer());}
+        if(hash(bytes)!==f.sha256||bytes.length!==f.size)throw Error(`Empreinte fausse : ${f.path}`);
+        const target=path.join(source,...f.path.split('/'));await fs.mkdir(path.dirname(target),{recursive:true});await fs.writeFile(target,bytes);
+        rights[f.path]={mode:own?'redistribute':'authorized-url',evidence:f.evidence,license:f.license,...(f.dependencies?.length?{dependencies:f.dependencies}:{}),...(own?{}:{url:f.url})};
+        console.log(`${f.path} (${bytes.length} octets)`);
+    }
+    if(baseUrl===null)throw Error('Aucun objet du bucket dans le manifeste : adresse de base inconnue');
+    const settings={version:nextVersion||manifest.version,baseUrl,...(assetLayout?{assetLayout}:{}),...(manifest.neoforge!==undefined?{neoforge:manifest.neoforge}:{fabric:manifest.fabric}),...(manifest.options?{options:manifest.options}:{}),rights};
+    await fs.writeFile(path.join(out,'config.json'),JSON.stringify(settings,null,2)+'\n',{flag:'wx'});
+    await fs.writeFile(path.join(out,`publie-${manifest.version}.json`),JSON.stringify(manifest,null,2)+'\n',{flag:'wx'});  // what was online, to compare a rebuild with
+    return {from:manifest.version,files:manifest.files.length,version:settings.version};
 }
 async function b2Upload(dist,prefix,keyFile){
     if(prefix&&!/^[a-z0-9-]+\/$/.test(prefix))throw Error('Préfixe invalide (ex. dev/)');
@@ -69,6 +95,7 @@ if(require.main===module)(async()=>{
     else if(command==='launcher') {const [exe,version,url,out,key,dmg,dmgUrl]=args;if(!require('semver').valid(version)||!/^https:\/\/.+\.exe$/.test(url)||(dmg&&!/^https:\/\/.+\.dmg$/.test(dmgUrl||'')))throw Error('Version ou URL invalide');const bytes=await fs.readFile(exe),macBytes=dmg&&await fs.readFile(dmg),payload=Buffer.from(JSON.stringify({appId:'fr.akuma.launcher',version,url,size:bytes.length,sha256:hash(bytes),...(dmg?{mac:{url:dmgUrl,size:macBytes.length,sha256:hash(macBytes)}}:{})}));await atomic(out,{payload:payload.toString('base64'),signature:crypto.sign(null,payload,await fs.readFile(key)).toString('base64')});console.log('Manifeste de mise à jour du launcher signé.');}
     else if(command==='rollback') {const [dst,version]=args;if(!/^\d+\.\d+\.\d+$/.test(version))throw Error('Version invalide');const envelope=JSON.parse(await fs.readFile(path.join(dst,'versions',version,'manifest.json')));await atomic(path.join(dst,'latest.json'),envelope);console.log('Pointeur restauré ; téléversez latest.json.');}
     else if(command==='upload') {const [dst,prefix='']=args;const keyFile=process.env.AKUMA_B2_KEY_FILE||path.join(require('node:os').homedir(),'.b2','publication-akuma.txt');console.log(`${await b2Upload(dst,prefix,keyFile)} fichier(s) envoyé(s) dans le bucket privé.`);}
-    else throw Error('Usage: keygen DOSSIER | build SOURCE SORTIE CONFIG CLE | upload SORTIE [PREFIXE] | rollback SORTIE VERSION');
+    else if(command==='pull') {const [out,key,version]=args;if(!out||!key)throw Error('Usage: pull SORTIE CLE [NOUVELLE_VERSION]');const keyFile=process.env.AKUMA_B2_KEY_FILE||path.join(require('node:os').homedir(),'.b2','publication-akuma.txt');await fs.mkdir(out,{recursive:true});if((await fs.readdir(out)).length)throw Error(`${out} doit être vide`);const r=await b2Pull(out,keyFile,await fs.readFile(key),version);console.log(`Pack ${r.from} récupéré : ${r.files} fichiers dans ${path.join(out,'source')}, config de la version ${r.version} dans ${path.join(out,'config.json')}.`);}
+    else throw Error('Usage: keygen DOSSIER | build SOURCE SORTIE CONFIG CLE | pull SORTIE CLE [NOUVELLE_VERSION] | upload SORTIE [PREFIXE] | rollback SORTIE VERSION');
 })().catch(e=>{console.error(e.message);process.exitCode=1;});
 module.exports={publish};
